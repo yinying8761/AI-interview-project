@@ -4,6 +4,7 @@ from __future__ import annotations
 # 与视觉分析得到的表情、注意力评分按权重合并。纯计算函数，不调用网络或磁盘。
 
 from decimal import Decimal, ROUND_HALF_UP
+import math
 from typing import Any, Dict, Optional
 
 
@@ -15,10 +16,10 @@ def fuse_interview_scores(
 ) -> Dict[str, Any]:
     '''Combine DeepSeek text scoring with local expression/attention scoring.'''
     # 权重必须加起来等于 1。允许极小的浮点误差，避免 0.8 + 0.2 的精度问题误报。
-    if abs((question_weight + video_weight) - 1.0) > 1e-9:
+    if not all(math.isfinite(w) and 0 <= w <= 1 for w in (question_weight, video_weight)) or abs((question_weight + video_weight) - 1.0) > 1e-9:
         raise ValueError('评分权重之和必须等于 1.0')
 
-    normalized_question_score = _clamp_score(question_score)
+    normalized_question_score = _optional_score(question_score)
     # 视频汇总可能不存在，或样本不足。这里分别安全读取两个可选分数。
     expression_score = _optional_score(
         video_summary.get('expression_score') if video_summary else None
@@ -36,7 +37,7 @@ def fuse_interview_scores(
 
     expression_attention_score = None
     final_score = None
-    if video_available:
+    if video_available and normalized_question_score is not None:
         # 视频表现分 = 表情分 * 50% + 注意力分 * 50%。
         expression_attention_score = _round_decimal(
             Decimal(str(expression_score)) * Decimal('0.5')
@@ -52,7 +53,7 @@ def fuse_interview_scores(
 
     return {
         # available 表示是否真的算出了最终分；前端可据此说明缺少摄像头样本。
-        'available': video_available,
+        'available': final_score is not None,
         'question_score': normalized_question_score,
         'expression_score': expression_score,
         'attention_score': attention_score,
@@ -66,8 +67,8 @@ def fuse_interview_scores(
             'attention_within_video': 0.5,
         },
         'formula': (
-            'final_score = question_score * 0.8 + '
-            '(expression_score * 0.5 + attention_score * 0.5) * 0.2'
+            f'final_score = question_score * {question_weight} + '
+            f'(expression_score * 0.5 + attention_score * 0.5) * {video_weight}'
         ),
         'video_sample_count': (
             int(video_summary.get('face_frames', 0))
@@ -76,8 +77,8 @@ def fuse_interview_scores(
         ),
         'note': (
             '问答、表情和注意力样本均可用，已计算最终得分。'
-            if video_available
-            else '有效视频样本不足，未生成最终得分；权重不会重新分配。'
+            if final_score is not None
+            else '存在未评估维度，未生成综合分；权重不会重新分配。'
         ),
     }
 
@@ -93,7 +94,12 @@ def _clamp_score(value: Any) -> float:
 
 def _optional_score(value: Any) -> Optional[float]:
     # 与 _clamp_score 的区别：None 仍保持 None，表示这项没有有效样本。
-    if value is None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        if not math.isfinite(float(value)):
+            return None
+    except (TypeError, ValueError):
         return None
     return _clamp_score(value)
 

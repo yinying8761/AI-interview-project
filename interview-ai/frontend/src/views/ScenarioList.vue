@@ -100,6 +100,7 @@
         </el-form-item>
         <el-form-item label="面试类型">
           <el-select v-model="interviewType" style="width: 100%">
+            <el-option label="大模型面试官（文本＋视觉）" value="llm" />
             <el-option label="答题面试" value="quiz" />
             <el-option label="AI 视频面试" value="video" />
           </el-select>
@@ -153,7 +154,7 @@ const selectedPaperId = ref(null)
 const availablePapers = ref([])
 const starting = ref(false)
 const scheduleRange = ref([])
-const interviewType = ref('quiz')
+const interviewType = ref('llm')
 const editingId = ref(null)
 const formRef = ref()
 
@@ -195,7 +196,7 @@ const startInterview = async (item) => {
     return
   }
   currentScenario.value = item
-  interviewType.value = 'quiz'
+  interviewType.value = 'llm'
   scheduleRange.value = []
   selectedPaperId.value = null
   availablePapers.value = []
@@ -228,7 +229,9 @@ const confirmStart = async () => {
       router.push('/records')
     } else {
       ElMessage.success('面试已开始')
-      if (interviewType.value === 'video') {
+      if (interviewType.value === 'llm') {
+        router.push(`/ai-interview/${record.id}`)
+      } else if (interviewType.value === 'video') {
         router.push(`/interview-room/${record.id}`)
       } else {
         router.push(`/interview/${record.id}?scenarioId=${currentScenario.value.id}`)

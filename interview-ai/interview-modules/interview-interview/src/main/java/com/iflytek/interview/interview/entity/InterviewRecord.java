@@ -25,6 +25,7 @@ public class InterviewRecord {
     private Integer duration;
     private String answerData;
     private String aiFeedback;
+    private String reportJson;
     private LocalDateTime scheduledAt;
     private LocalDateTime plannedEndAt;
     private Integer reminderSent;

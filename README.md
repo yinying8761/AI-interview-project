@@ -1,144 +1,21 @@
-# 多模态智能模拟面试评测平台
+# 多模态智能模拟面试评测平台 v1.1.0
 
-太原理工就业班 · 项目化教学（人工智能 Ⅱ 方向）· 第 11 组「面面俱到项目组」
+第 11 组“面面俱到项目组”；组长郑颖浩，成员常辰、赵佳伟。课程验收选定 **文本理解与评价＋视觉行为分析** 两个感知模块，扩展能力为 **大模型面试官**。用户端 Vue 3、主服务 Spring Boot、AI 服务 Flask／DeepSeek／MediaPipe；演示需 JDK 21、Maven 3.9+、Node.js 18+、Python 3.12、Redis。Python 环境安装 `smartspeech_optimized/requirements.txt`，视觉分析另需 `mediapipe==0.10.14`。
 
-| 成员 | 项目角色 |
-| --- | --- |
-| 郑颖浩（组长） | 项目管理、架构设计、开发、部署 |
-| 常辰 | AI 能力开发、感知模块开发 |
-| 赵佳伟 | 前端开发、前后端联调、测试 |
+## 本地启动（无需 MySQL）
 
----
+1. 保持本机 Redis 在 `127.0.0.1:6379` 运行。把 `smartspeech_optimized/.env.example` 复制为 `.env`，仅在本机填写 `DEEPSEEK_API_KEY`；绝不要把 `.env` 放进交付包。启动 AI 服务：在 `smartspeech_optimized/` 执行 `python -m backend.run`，地址为 `http://127.0.0.1:8765`。
+2. 在 `interview-ai/` 执行 `mvn -B -ntp package`，再执行 `java -jar interview-bootstrap/target/interview-bootstrap-1.0.0.jar --spring.profiles.active=dev,demo --server.port=8088`。此模式在 `runtime/` 建立持久 H2 演示库，首次运行自动导入场景、题目和演示账号。接口文档：`http://127.0.0.1:8088/doc.html`。
+3. 在 `interview-ai/frontend/` 执行 `npm ci`；PowerShell 中执行 `$env:API_PROXY_TARGET='http://127.0.0.1:8088'; npm run dev`，打开 `http://127.0.0.1:5173`。候选人 `test01 / 123456`，面试官 `host01 / 123456`，管理员 `admin / admin123`；这些仅为本地演示账号。
 
-## 一、系统构成
+## 现场验收
 
-系统由「一个主后端 + 一个 AI 能力服务 + 两个前端」组成。浏览器只与 Java 主后端交互，
-Java 主后端通过 `AiApiClient` 调用 Python AI 能力服务完成大模型、视觉与语音能力，
-Python 服务不直接对外暴露。
+候选人登录后在“面试大厅”选择 Java 后端场景，面试类型选“大模型面试官（文本＋视觉）”。留空预约时间可立即进入；填写预约时间可测试持久化、刷新查询及角色权限。进入面试后点击“生成首题”，输入一段新的岗位回答，点击提交；允许摄像头并保持面部可见约 15 秒以上以采集视觉样本，随后完成面试。在“我的记录→查看报告”检查原始问答、两项评测状态、分数和公式，也可下载完整 JSON。未采集到有效视觉样本时，该维度与综合分均为“未评估”。
 
-| 模块 | 目录 | 技术栈 | 端口 |
-| --- | --- | --- | --- |
-| Java 主后端 | `interview-ai/` | Spring Boot 3.5 · MyBatis-Plus · MySQL 8 · Redis · JWT · WebSocket | 8080 |
-| AI 能力服务 | `smartspeech_optimized/` | Flask · DeepSeek · MediaPipe · Edge-TTS | 8765 |
-| 用户端前端 | `interview-ai/frontend/` | Vue 3 · Vite · Element Plus · Pinia | 5173 |
-| 管理端前端 | `interviwe-platform/interview-platform/` | Vue 3 · Vite | 5174（需手动指定） |
+附带 `data/测试数据/合成面试人像.png` 为**虚构人物**，用于无摄像头的视觉接口自动化复测；文本输入见 `data/测试数据/新文本回答.txt`。`tools/smoke_test.py` 覆盖登录、预约、权限和异常；`tools/smoke_ai.py` 验证真实出题与问答评分；`tools/smoke_vision.py` 把合成图像逐帧送入 MediaPipe 并检查融合报告。运行三者需要已启动服务及 Python `requests`、`Pillow`。
 
-Java 后端为 Maven 多模块结构：`interview-common`（公共基础）、`interview-modules`（六个业务模块
-system / question / interview / resume / file / job）、`interview-bootstrap`（启动与配置）。
+## 可选：改用 MySQL 虚拟机
 
-### 感知模块与扩展能力
+在 MySQL 8 建立 `interview_ai` 库并执行 `interview-ai/sql/interview_ai.sql`。复制 `interview-ai/interview-bootstrap/src/main/resources/application-local.yml.example` 为 `application-local.yml`，填写虚拟机地址和数据库口令；然后用 `--spring.profiles.active=dev,local` 启动 Java 服务。该配置文件不得提交。若 `3306` 不通，请检查虚拟机网络、MySQL 监听与防火墙；本地 H2 演示模式可以继续验收。已有旧库只执行 `interview-ai/sql/acceptance_v110_delta.sql` 作增量更新。
 
-课程要求「三选二」感知模块 + 一项扩展能力，本组实现：
-
-- **文本理解与评价** —— 对接 DeepSeek 大模型面试官，逐题评估并生成报告；
-- **视觉行为分析** —— MediaPipe FaceMesh 采集表情、视线、头姿与注意力指标；
-- **扩展能力：大模型面试官** —— 开场出题、追问、评分融合（问答 × 80% + 视频 × 20%）。
-
-视频不可用或未采集时，报告对应维度显示「未评估」，不计入融合分。
-
----
-
-## 二、运行步骤
-
-### 0. 前置依赖
-
-- JDK 21、Maven 3.9+
-- Python 3.10（3.11+ 未验证；`mediapipe` 需 0.10.14）
-- Node.js 18+
-- MySQL 8、Redis（Windows 下均可作为服务常驻）
-
-### 1. 初始化数据库
-
-```bash
-mysql -uroot -p < interview-ai/sql/interview_ai.sql
-```
-
-如需在已有库上做增量更新，按顺序执行 `interview-ai/sql/` 下其余 `*_delta*.sql`。
-
-### 2. 配置密钥
-
-**Java 侧**：复制模板并填写本机口令（该文件已被 `.gitignore` 忽略）
-
-```bash
-cd interview-ai/interview-bootstrap/src/main/resources
-cp application-local.yml.example application-local.yml
-# 编辑 application-local.yml：填写 MySQL 口令；Gitee 登录可选
-```
-
-`application.yml` 通过 `spring.profiles.active: dev,local` 载入该文件，
-其优先级高于 `application-dev.yml` 中的占位符。
-
-**Python 侧**：复制模板并填写 DeepSeek API Key
-
-```bash
-cd smartspeech_optimized
-cp .env.example .env
-# 编辑 .env：DEEPSEEK_API_KEY=sk-xxxx
-```
-
-### 3. 启动 AI 能力服务（8765）
-
-```bash
-cd smartspeech_optimized
-python -m backend.run
-```
-
-启动后访问 <http://127.0.0.1:8765/api/ai/health> 应返回各能力开关状态。
-
-### 4. 构建并启动 Java 主后端（8080）
-
-```bash
-cd interview-ai
-mvn clean package -DskipTests
-java -jar interview-bootstrap/target/interview-bootstrap-1.0.0.jar
-```
-
-接口文档：<http://127.0.0.1:8080/doc.html>
-
-### 5. 启动前端
-
-```bash
-# 用户端
-cd interview-ai/frontend && npm install && npm run dev     # http://localhost:5173
-
-# 管理端
-cd interviwe-platform/interview-platform && npm install && npm run dev -- --port 5174
-```
-
-### 6. 演示账号
-
-| 账号 | 口令 | 角色 |
-| --- | --- | --- |
-| `admin` | `admin123` | 管理员 |
-| `host01` | `123456` | 面试官 |
-| `test01` | `123456` | 候选人 |
-
-> Python AI 服务另有一套独立的账号体系（存于 `data/auth/users.json`，已被忽略），
-> 与 Java 侧不互通；正常演示只使用上表账号。
-
----
-
-## 三、隐私与安全约定
-
-本仓库**不含任何真实密钥与用户隐私数据**，以下内容均已在 `.gitignore` 中排除：
-
-| 类别 | 具体内容 |
-| --- | --- |
-| 密钥配置 | `application-local.yml`（数据库口令、Gitee client-secret）、`.env`（DeepSeek API Key） |
-| 用户隐私 | `data/auth/`（账号与口令哈希）、`data/auth/faces/`（人脸特征）、`data/resumes/`、`runtime/`（报告、转写音频、截图） |
-| 会话凭据 | `qa-state.json`（含已登录的会话 Cookie） |
-| 数据库转储 | `*backup*.sql` 等全库导出（含口令哈希与考生作答原文） |
-| 运行日志 | `*.log` |
-
-仓库中 `application-dev.yml` 的第三方密钥一律为占位值，请勿把真实值直接写回该文件。
-
-`smartspeech_optimized/ffmpeg.exe` 体积达 70MB 且可自动补齐，故未入库；
-代码在找不到它时会通过 `imageio-ffmpeg` 自动准备，无需人工干预。
-
----
-
-## 四、补充说明
-
-- `interviwe-platform/` 为管理端前端工程，部分页面仍在从本地 mock 数据切换到真实接口的过程中。
-- `smartspeech_optimized/` 自带一个历史遗留的独立前端界面（同端口 8765），
-  属于该 AI 服务早期作为独立产品时的产物，**不属于本系统架构**，演示时不使用。
+项目只评估练习表现，视觉指标不是身份认证。图像仅用于本次实时分析，报告保存汇总指标及输入追溯，不保存原始摄像头帧。真实 API 密钥、个人材料中的班级／学号、个人贡献证明需在提交前由成员本人核实。

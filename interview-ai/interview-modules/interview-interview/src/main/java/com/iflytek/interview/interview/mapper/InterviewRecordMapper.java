@@ -18,4 +18,7 @@ public interface InterviewRecordMapper extends BaseMapper<InterviewRecord> {
             ORDER BY r.created_at DESC
             """)
     List<InterviewRecord> selectAllWithCandidate();
+
+    @Select("SELECT * FROM interview_record WHERE id = #{id} FOR UPDATE")
+    InterviewRecord selectForUpdate(Long id);
 }

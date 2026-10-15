@@ -12,6 +12,11 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- 聚合业务模块 -->
         <dependency>
             <groupId>com.iflytek</groupId>

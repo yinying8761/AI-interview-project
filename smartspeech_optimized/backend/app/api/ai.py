@@ -22,6 +22,7 @@ from backend.app.api.common import (
 )
 from backend.app.config import Config
 from backend.app.services.deepseek_service import DeepSeekError
+from backend.app.services.interview_service import InterviewService
 from backend.app.services.resume_service import ResumeError
 from backend.app.services.question_bank import INTERVIEW_SCENES
 from backend.app.services.score_service import fuse_interview_scores
@@ -504,7 +505,7 @@ def create_ai_session():
     # 创建一场 AI 面试会话。Java 在 startInterview 时调用，并保存返回的 session_id。
     payload = json_body()
     user_id = str(payload.get("user_id") or "").strip() or None
-    job_role = str(payload.get("job_role") or services().interview.DEFAULT_JOB_ROLE).strip()
+    job_role = str(payload.get("job_role") or InterviewService.DEFAULT_JOB_ROLE).strip()
     difficulty = str(payload.get("difficulty") or "中级").strip()
     voice = str(payload.get("voice") or Config.DEFAULT_TTS_VOICE).strip()
     logger.info("创建 AI 会话: user_id=%s, job_role=%s, difficulty=%s", user_id, job_role, difficulty)
@@ -587,13 +588,7 @@ def open_ai_session(session_id: str):
             item, plan, [], "请开始这场模拟面试。先用一句话问候候选人，随即按当前面试计划提出第一个问题。"
         )
     except (DeepSeekError, ValueError) as exc:
-        warning = f"首题生成失败，已使用备用开场问题：{exc}"
-        first_question = (
-            "你好，欢迎参加本次模拟面试。请结合简历中最熟悉的一段项目经历，"
-            "说明你的具体职责、核心方案以及最终结果。"
-            if item.resume_content
-            else "你好，欢迎参加本次模拟面试。请先做一个自我介绍，重点说明与你目标岗位最匹配的一段经历。"
-        )
+        return json_error(f"大模型出题不可用：{exc}", 502)
 
     logger.info("AI 出题-首题完成: warning=%s", warning)
     record = _message("assistant", first_question, message_type="question", metadata=_question_metadata(plan))
@@ -781,6 +776,23 @@ def evaluate_transcript():
         "score_fusion": score_fusion,
         "answer_count": answer_count,
     })
+
+
+@ai_bp.post("/ai/sessions/<session_id>/vision-summary")
+def summarize_vision(session_id: str):
+    """视觉汇总独立于大模型，文字题库作答和模型故障也能保存视觉证据。"""
+    item = _ai_session(session_id)
+    if item is None:
+        return json_error("面试会话不存在。", 404)
+    with item.lock:
+        if item.video_summary is None and item.analyzer is not None:
+            if item.vision_worker is not None:
+                item.vision_worker.stop()
+            item.video_summary = item.analyzer.stop_session()
+        return jsonify({"video_summary": item.video_summary or {
+            "video_available": False, "face_frames": 0,
+            "expression_score": None, "attention_score": None,
+        }})
 
 
 @ai_bp.post("/ai/sessions/<session_id>/finish")

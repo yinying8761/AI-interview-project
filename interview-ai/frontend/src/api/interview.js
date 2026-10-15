@@ -169,7 +169,7 @@ export function startSession(id) {
 }
 
 export function completeSession(id, data) {
-  return request.post(`/interview-sessions/${id}/complete`, data)
+  return request.post(`/interview-sessions/${id}/complete`, data, { timeout: 180000 })
 }
 
 export function cancelSession(id, data) {

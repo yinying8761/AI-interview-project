@@ -6,6 +6,19 @@ from backend.app.services.score_service import fuse_interview_scores
 
 
 class ScoreServiceTests(unittest.TestCase):
+    def test_missing_or_nonfinite_text_is_not_zero(self):
+        for value in (None, 'invalid', float('nan'), float('inf'), True):
+            with self.subTest(value=value):
+                result = fuse_interview_scores(value, {'video_available': True, 'expression_score': 80, 'attention_score': 70})
+                self.assertIsNone(result['question_score'])
+                self.assertIsNone(result['final_score'])
+                self.assertFalse(result['available'])
+
+    def test_negative_or_nan_weights_are_rejected(self):
+        for a, b in ((-1, 2), (float('nan'), .2)):
+            with self.assertRaises(ValueError):
+                fuse_interview_scores(80, None, a, b)
+
     def test_rejects_weights_that_do_not_sum_to_one(self) -> None:
         with self.assertRaises(ValueError):
             fuse_interview_scores(

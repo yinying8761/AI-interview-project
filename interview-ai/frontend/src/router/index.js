@@ -26,6 +26,11 @@ const routes = [
     redirect: '/dashboard',
     children: [
       {
+        path: 'ai-interview/:recordId',
+        component: () => import('../views/AiConversation.vue'),
+        meta: { title: '大模型面试官', hidden: true, interviewOnly: true }
+      },
+      {
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),

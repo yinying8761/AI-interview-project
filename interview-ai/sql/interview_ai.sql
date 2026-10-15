@@ -76,6 +76,7 @@ CREATE TABLE `interview_record` (
     `answer_data` TEXT COMMENT '答题数据（JSON字符串）',
     `ai_session_id` VARCHAR(64) COMMENT 'Python AI 会话映射键',
     `current_phase` VARCHAR(20) DEFAULT 'ASKING' COMMENT '当前题目阶段',
+    `report_json` LONGTEXT COMMENT '可追溯评测报告',
     `submit_id` VARCHAR(64) COMMENT '最近一次提交的幂等键',
     `ai_feedback` TEXT COMMENT 'AI评价反馈',
     `started_at` DATETIME COMMENT '开始时间',
@@ -798,3 +799,41 @@ CREATE TABLE IF NOT EXISTS `interview_vision_summary` (
   UNIQUE KEY `uk_vision_summary_record` (`record_id`),
   UNIQUE KEY `uk_vision_summary_session` (`session_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='视觉分析汇总表';
+
+-- ============================================================
+-- 第11讲：语音转文字实时集成（增量）
+-- 存储 Python /api/ai/asr 返回的转写结果与分段。
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS `interview_transcript` (
+  `id`             BIGINT       PRIMARY KEY AUTO_INCREMENT,
+  `record_id`      BIGINT       NOT NULL COMMENT '面试记录 ID',
+  `question_index` INT          NOT NULL COMMENT '题号',
+  `segment_id`     BIGINT       NOT NULL COMMENT '音频片段 ID',
+  `text`           TEXT         COMMENT '完整转写文本',
+  `language`       VARCHAR(20)  COMMENT '语言',
+  `segments_json`  JSON         COMMENT '转写分段(含起止时间)',
+  `status`         VARCHAR(20)  DEFAULT 'PARSED' COMMENT '状态',
+  `created_at`     DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_record_q` (`record_id`, `question_index`)
+);
+
+CREATE TABLE IF NOT EXISTS `interview_transcript_segment` (
+  `id`            BIGINT   PRIMARY KEY AUTO_INCREMENT,
+  `transcript_id` BIGINT   NOT NULL COMMENT '所属转写结果 ID',
+  `seq`           INT      NOT NULL COMMENT '分段序号',
+  `start_ms`      BIGINT   NOT NULL COMMENT '开始(毫秒)',
+  `end_ms`        BIGINT   NOT NULL COMMENT '结束(毫秒)',
+  `text`          VARCHAR(500) COMMENT '分段文本',
+  `confidence`    DECIMAL(5,4) COMMENT '置信度',
+  KEY `idx_transcript` (`transcript_id`)
+);
+
+CREATE TABLE IF NOT EXISTS user_oauth_binding (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL,
+ provider VARCHAR(40) NOT NULL, provider_user_id VARCHAR(120) NOT NULL,
+ provider_username VARCHAR(120), avatar_url VARCHAR(500),
+ created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+ updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE KEY uk_oauth_provider (provider, provider_user_id)
+);

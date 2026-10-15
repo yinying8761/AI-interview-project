@@ -4,6 +4,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
+import com.iflytek.interview.common.ai.AiProperties;
 
 import java.time.Duration;
 
@@ -16,11 +17,10 @@ import java.time.Duration;
 public class HttpClientConfig {
 
     @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        // 连接 5s、读取 120s：Whisper CPU 转写可能耗时较长，读超时需覆盖单次识别。
+    public RestTemplate restTemplate(RestTemplateBuilder builder, AiProperties properties) {
         return builder
-                .setConnectTimeout(Duration.ofSeconds(5))
-                .setReadTimeout(Duration.ofSeconds(120))
+                .connectTimeout(Duration.ofMillis(properties.getConnectTimeout()))
+                .readTimeout(Duration.ofMillis(properties.getReadTimeout()))
                 .build();
     }
 }

@@ -77,6 +77,7 @@ public class InterviewRecordServiceImpl
     @Transactional
     public InterviewRecord createRecord(Long userId, Long scenarioId, Long paperId) {
         ensureInterviewCandidate();
+        validateScenario(scenarioId);
         if (paperId != null) {
             paperQueryService.validatePaper(paperId, scenarioId);
         }
@@ -110,12 +111,23 @@ public class InterviewRecordServiceImpl
     @Override
     @Transactional
     public InterviewRecord submitInterview(Long recordId, Long userId, String answerData) {
+        // 行锁串行化完成操作；权限检查仍在返回任何记录之前执行。
+        baseMapper.selectForUpdate(recordId);
         InterviewRecord record = checkAndGet(recordId, userId);
+        if (InterviewStatus.COMPLETED.getCode().equals(record.getStatus())) {
+            return record;
+        }
         checkTransition(record.getStatus(), InterviewStatus.COMPLETED.getCode());
+
+        if (answerData != null && answerData.length() > 100_000) {
+            throw new BusinessException(400, "答案长度不能超过100000字符");
+        }
+        String submittedAnswers = answerData == null || answerData.isBlank()
+                ? record.getAnswerData() : answerData;
 
         LocalDateTime now = LocalDateTime.now();
         record.setStatus(InterviewStatus.COMPLETED.getCode());
-        record.setAnswerData(answerData);
+        record.setAnswerData(submittedAnswers);
         record.setCompletedAt(now);
         if (record.getStartedAt() != null) {
             // interview_record.duration 的单位是秒（见建表注释），前端也按秒换算为“x分y秒”。
@@ -128,16 +140,18 @@ public class InterviewRecordServiceImpl
         // 结束会话取视觉汇总（内部会调用 Python /finish 并落库 video_summary）
         Map<String, Object> videoSummary = visionService.finishAndSave(record.getId(), userId);
         Map<String, Object> analysis = new LinkedHashMap<>(videoSummary);
+        // 本地题目送评失败时不能使用另一套题目的会话评分冒充结果。
+        analysis.remove(InterviewVisionServiceImpl.AI_REPORT_KEY);
         // 问答评测改走独立接口：把本地题库的真实题面 + 考生作答直接送评，
         // 避免 Python 会话用自己那套题目配对，导致评测与输入不对应。
-        Map<String, Object> alignedEvaluation = evaluateWithLocalQuestions(record, answerData, videoSummary);
+        Map<String, Object> alignedEvaluation = evaluateWithLocalQuestions(record, submittedAnswers, videoSummary);
         if (alignedEvaluation != null) {
             analysis.put(InterviewVisionServiceImpl.AI_REPORT_KEY, alignedEvaluation);
         }
         reportGenerator.generateReport(record.getId(), analysis);
         releaseAiSession(record);
         clearSessionCache(recordId);
-        return record;
+        return getById(recordId);
     }
 
     /**
@@ -241,7 +255,7 @@ public class InterviewRecordServiceImpl
     @Override
     @Transactional
     public InterviewRecord scoreInterview(Long recordId, RecordScoreDTO dto) {
-        InterviewRecord record = getById(recordId);
+        InterviewRecord record = checkAndGet(recordId, SecurityUtil.getCurrentUserId());
         if (record == null) {
             throw new BusinessException(ErrorCode.RECORD_NOT_FOUND);
         }
@@ -279,6 +293,8 @@ public class InterviewRecordServiceImpl
     @Override
     @Transactional
     public InterviewRecord createSession(Long userId, InterviewSessionCreateRequest request) {
+        ensureInterviewCandidate();
+        validateScenario(request.getScenarioId());
         validateSchedule(request.getScheduledAt(), request.getPlannedEndAt());
         if (request.getScenarioId() == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR);
@@ -493,6 +509,12 @@ public class InterviewRecordServiceImpl
         }
         if (!SecurityUtil.hasRole("candidate")) {
             throw new BusinessException(ErrorCode.INTERVIEW_ONLY_CANDIDATE);
+        }
+    }
+
+    private void validateScenario(Long scenarioId) {
+        if (scenarioId == null || scenarioMapper.selectById(scenarioId) == null) {
+            throw new BusinessException(400, "面试场景不存在");
         }
     }
 

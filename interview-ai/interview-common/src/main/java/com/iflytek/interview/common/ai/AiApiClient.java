@@ -123,7 +123,7 @@ public class AiApiClient {
     public Map<String, Object> finish(String sessionId) {
         HttpEntity<Void> entity = new HttpEntity<>(jsonHeaders());
         ResponseEntity<Map> resp = restTemplate.exchange(
-                aiProperties.getBaseUrl() + "/api/ai/sessions/" + sessionId + "/finish",
+                aiProperties.getBaseUrl() + "/api/ai/sessions/" + sessionId + "/vision-summary",
                 HttpMethod.POST, entity, Map.class);
         Map<String, Object> body = requireBody(resp, "视觉分析汇总失败");
         // Python /finish 返回 {"report": {...报告...}}，报告内的 video_summary
@@ -141,13 +141,18 @@ public class AiApiClient {
      * 生成开场题，使 Python 会话进入可答题状态。
      * 未生成开场题时，后续 /messages 与 /finish 都会被拒绝。
      */
-    public void generateOpening(String sessionId) {
+    public Map<String, Object> generateOpening(String sessionId) {
         HttpHeaders headers = jsonHeaders();
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(new HashMap<>(), headers);
         ResponseEntity<Map> resp = restTemplate.exchange(
                 aiProperties.getBaseUrl() + "/api/ai/sessions/" + sessionId + "/opening",
                 HttpMethod.POST, entity, Map.class);
-        requireBody(resp, "生成开场题失败");
+        return requireBody(resp, "生成开场题失败");
+    }
+
+    public Map<String, Object> sessionState(String sessionId) {
+        return requireBody(restTemplate.exchange(aiProperties.getBaseUrl() + "/api/ai/sessions/" + sessionId,
+                HttpMethod.GET, new HttpEntity<>(jsonHeaders()), Map.class), "读取AI会话失败");
     }
 
     /**

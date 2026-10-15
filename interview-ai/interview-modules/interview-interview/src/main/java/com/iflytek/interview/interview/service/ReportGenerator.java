@@ -7,6 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import java.util.LinkedHashMap;
+import java.time.LocalDateTime;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -40,11 +44,13 @@ public class ReportGenerator {
     @Autowired
     private InterviewRecordMapper recordMapper;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public void generateReport(Long recordId) {
         generateReport(recordId, Map.of("video_available", false));
     }
 
-    @Async("reportExecutor")
     public void generateReport(Long recordId, Map<String, Object> analysisResult) {
         InterviewRecord record = recordMapper.selectById(recordId);
         if (record == null) {
@@ -73,7 +79,7 @@ public class ReportGenerator {
             // 拿不到问答分就如实留空，不用占位分值伪造成绩
             score = null;
             feedback = "本次未取得问答评测得分（大模型评测不可用或未作答），因此不生成综合评分。"
-                    + "视频维度：" + (videoAvailable ? "已采集到有效样本。" : "有效样本不足。");
+                    + "视频维度：" + (videoAvailable ? "已采集到有效样本。" : "未评估。");
         } else if (videoAvailable && expressionScore != null && attentionScore != null) {
             BigDecimal visualScore = expressionScore.add(attentionScore)
                     .divide(TWO, SCALE, RoundingMode.HALF_UP);
@@ -82,16 +88,36 @@ public class ReportGenerator {
                     .setScale(SCALE, RoundingMode.HALF_UP);
             feedback = buildFeedback(questionEvaluation, score, questionScore, visualScore);
         } else {
-            // 有效视频样本不足：直接采用问答分，权重不重分配
-            score = questionScore.setScale(SCALE, RoundingMode.HALF_UP);
+            // 与 Python 保持一致：缺少所选维度时不生成综合分。
+            score = null;
             feedback = buildFeedback(questionEvaluation, score, questionScore, null);
         }
 
-        InterviewRecord update = new InterviewRecord();
-        update.setId(recordId);
-        update.setScore(score);
-        update.setAiFeedback(feedback);
-        recordMapper.updateById(update);
+        Map<String, Object> trace = new LinkedHashMap<>();
+        trace.put("version", "1.1.0");
+        trace.put("recordId", recordId);
+        trace.put("generatedAt", LocalDateTime.now().toString());
+        trace.put("input", record.getAnswerData());
+        trace.put("aiSessionId", record.getAiSessionId());
+        trace.put("questionEvaluation", questionEvaluation);
+        trace.put("questionScore", questionScore);
+        trace.put("videoSummary", safeResult.entrySet().stream()
+                .filter(e -> !e.getKey().equals(InterviewVisionServiceImpl.AI_REPORT_KEY))
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey,
+                        e -> e.getValue() == null ? "未评估" : e.getValue())));
+        trace.put("finalScore", score);
+        trace.put("textStatus", questionScore == null ? "未评估" : "已评估");
+        trace.put("visionStatus", videoAvailable && expressionScore != null && attentionScore != null ? "已评估" : "未评估");
+        trace.put("formula", "问答×0.8＋(表情×0.5＋注意力×0.5)×0.2；缺少维度时综合分为null");
+        trace.put("feedback", feedback);
+        try {
+            // 显式写 null，防止 MyBatis 的非空更新策略保留旧分数。
+            recordMapper.update(null, new UpdateWrapper<InterviewRecord>().eq("id", recordId)
+                    .set("score", score).set("ai_feedback", feedback)
+                    .set("report_json", objectMapper.writeValueAsString(trace)));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("报告序列化失败", e);
+        }
 
         log.info("[异步] 评测报告生成完成 recordId={}, questionScore={}, videoAvailable={}, finalScore={}",
                 recordId, questionScore, videoAvailable, score);
@@ -101,21 +127,21 @@ public class ReportGenerator {
     private String buildFeedback(Map<String, Object> evaluation, BigDecimal finalScore,
                                  BigDecimal questionScore, BigDecimal visualScore) {
         if (evaluation == null || evaluation.isEmpty()) {
-            return "综合评分 " + finalScore + " 分（问答 " + questionScore + " 分）。"
+            return (finalScore == null ? "综合评分未评估" : "综合评分 " + finalScore + " 分") + "（问答 " + questionScore + " 分）。"
                     + (visualScore == null
-                    ? "有效视频样本不足，视频维度未计入。"
+                    ? "视频维度未评估，未生成综合分。"
                     : "视频维度 " + visualScore + " 分。");
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("综合评分 ").append(finalScore).append(" 分");
+        sb.append(finalScore == null ? "综合评分未评估" : "综合评分 " + finalScore + " 分");
         String level = asString(evaluation.get("level"));
         if (level != null && !level.isBlank()) {
             sb.append("（").append(level).append("）");
         }
         sb.append("；问答 ").append(questionScore).append(" 分");
         sb.append(visualScore == null
-                ? "，有效视频样本不足，权重未重新分配。"
+                ? "，视频维度未评估，未生成综合分。"
                 : "，视频 " + visualScore + " 分，按问答 80% / 视频 20% 融合。");
 
         String summary = asString(evaluation.get("summary"));
@@ -187,7 +213,8 @@ public class ReportGenerator {
             return null;
         }
         try {
-            return new BigDecimal(String.valueOf(value));
+            BigDecimal score = new BigDecimal(String.valueOf(value));
+            return score.signum() < 0 || score.compareTo(new BigDecimal("100")) > 0 ? null : score;
         } catch (NumberFormatException e) {
             return null;
         }

@@ -5,6 +5,7 @@
         {{ store.isAdmin ? '📄 全部面试记录' : store.isCandidatePortal ? '📄 我的面试记录' : '📄 面试评审' }}
       </h2>
       <div class="toolbar">
+        <el-button :loading="loading" @click="loadRecords">刷新记录</el-button>
         <el-select v-model="filterStatus" placeholder="筛选状态" clearable style="width: 140px"
           @change="applyFilter">
           <el-option label="全部" value="" />
@@ -37,7 +38,7 @@
         <el-table-column label="面试类型" width="110" align="center">
           <template #default="{ row }">
             <el-tag :type="getRecordType(row) === 'video' ? 'primary' : 'info'" size="small">
-              {{ getRecordType(row) === 'video' ? 'AI 模拟面试' : '文字答题' }}
+              {{ getRecordType(row) === 'llm' ? '大模型面试官' : getRecordType(row) === 'video' ? 'AI 模拟面试' : '文字答题' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -96,7 +97,7 @@
     <el-dialog v-model="reportVisible" title="面试评测报告" width="640px">
       <template v-if="reportData">
         <div style="text-align: center; margin-bottom: 24px">
-          <div style="font-size: 48px; font-weight: 700; color: #409EFF">{{ reportData.score ?? '—' }}</div>
+          <div style="font-size: 48px; font-weight: 700; color: #409EFF">{{ reportData.score ?? '未评估' }}</div>
           <div style="font-size: 14px; color: #909399">综合评分（满分 100）</div>
         </div>
 
@@ -120,8 +121,15 @@
             {{ reportData.aiFeedback || '报告正在生成中，请稍后刷新查看...' }}
           </div>
         </div>
+        <el-descriptions v-if="reportTrace" :column="1" border style="margin-top:16px">
+          <el-descriptions-item label="文本理解与评价">{{ reportTrace.textStatus }} · {{ reportTrace.questionScore ?? '未评估' }}</el-descriptions-item>
+          <el-descriptions-item label="视觉行为分析">{{ reportTrace.visionStatus }}</el-descriptions-item>
+          <el-descriptions-item label="评分规则">{{ reportTrace.formula }}</el-descriptions-item>
+          <el-descriptions-item label="输入追溯"><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ reportTrace.input || '未提交文本' }}</pre></el-descriptions-item>
+        </el-descriptions>
       </template>
       <template #footer>
+        <el-button v-if="reportTrace" @click="downloadReport">下载完整报告 JSON</el-button>
         <el-button @click="reportVisible = false">关闭</el-button>
       </template>
     </el-dialog>
@@ -177,6 +185,17 @@ const filterStatus = ref('')
 
 const reportVisible = ref(false)
 const reportData = ref(null)
+const reportTrace = computed(() => {
+  try { return JSON.parse(reportData.value?.reportJson || 'null') } catch { return null }
+})
+const downloadReport = () => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(reportTrace.value, null, 2)], { type: 'application/json' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `面试报告-${reportData.value.id}.json`
+  link.click()
+  URL.revokeObjectURL(url)
+}
 const scoreVisible = ref(false)
 const scoreSaving = ref(false)
 const scoreData = ref(null)
@@ -226,6 +245,7 @@ const canEnterInterview = (row) => {
 
 // 进入面试：按类型跳转，视频走 WebRTC 面试间，答题走文字答题房
 const enterInterview = async (row) => {
+  if (getRecordType(row) === 'llm') { router.push(`/ai-interview/${row.id}`); return }
   if (getRecordType(row) === 'video') {
     router.push(`/interview-room/${row.id}`)
     return
@@ -260,7 +280,7 @@ const start = async (row) => {
 }
 
 const complete = async (row) => {
-  await completeSession(row.id, { answerData: JSON.stringify({ recordId: row.id, source: 'manual' }) })
+  await completeSession(row.id, {})
   ElMessage.success('面试已完成')
   await loadRecords()
 }

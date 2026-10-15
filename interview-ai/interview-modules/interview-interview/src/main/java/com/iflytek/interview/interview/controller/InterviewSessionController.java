@@ -57,6 +57,7 @@ public class InterviewSessionController {
     @PreAuthorize("hasAuthority('record:view')")
     @GetMapping("/{recordId}/state")
     public Result<InterviewStateSnapshot> state(@PathVariable Long recordId) {
+        sessionService.getSession(recordId, SecurityUtil.getCurrentUserId());
         return Result.success(stateService.snapshot(recordId));
     }
 
