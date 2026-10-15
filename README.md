@@ -1,10 +1,10 @@
 # 多模态智能模拟面试评测平台 v1.1.0
 
-第 11 组“面面俱到项目组”；组长郑颖浩，成员常辰、赵佳伟。课程验收选定 **文本理解与评价＋视觉行为分析** 两个感知模块，扩展能力为 **大模型面试官**。用户端 Vue 3、主服务 Spring Boot、AI 服务 Flask／DeepSeek／MediaPipe；演示需 JDK 21、Maven 3.9+、Node.js 18+、Python 3.12、Redis。Python 环境安装 `smartspeech_optimized/requirements.txt`，视觉分析另需 `mediapipe==0.10.14`。
+第 11 组“面面俱到项目组”；组长郑颖浩，成员常辰、赵佳伟。课程验收选定 **文本理解与评价＋视觉行为分析** 两个感知模块，扩展能力为 **大模型面试官**。用户端 Vue 3、主服务 Spring Boot、AI 服务 Flask／DeepSeek／MediaPipe；演示需 JDK 21、Maven 3.9+、Node.js 18+、Python 3.12、Redis。AI 环境使用 `smartspeech_optimized/requirements-acceptance.txt`；原 `requirements.txt` 还包含未选中的语音等可选功能。
 
 ## 本地启动（无需 MySQL）
 
-1. 保持本机 Redis 在 `127.0.0.1:6379` 运行。把 `smartspeech_optimized/.env.example` 复制为 `.env`，仅在本机填写 `DEEPSEEK_API_KEY`；绝不要把 `.env` 放进交付包。启动 AI 服务：在 `smartspeech_optimized/` 执行 `python -m backend.run`，地址为 `http://127.0.0.1:8765`。
+1. 保持本机 Redis 在 `127.0.0.1:6379` 运行。把 `smartspeech_optimized/.env.example` 复制为 `.env`，仅在本机填写 `DEEPSEEK_API_KEY`；绝不要把 `.env` 放进交付包。在 PowerShell 进入 `smartspeech_optimized/`，首次运行执行 `py -3.12 -m venv .venv-vision` 和 `.\.venv-vision\Scripts\python.exe -m pip install -r requirements-acceptance.txt`；以后直接执行 `.\.venv-vision\Scripts\python.exe -m backend.run`。不要从 Conda `base` 环境直接运行 `python -m backend.run`。AI 服务地址为 `http://127.0.0.1:8765`。
 2. 在 `interview-ai/` 执行 `mvn -B -ntp package`，再执行 `java -jar interview-bootstrap/target/interview-bootstrap-1.0.0.jar --spring.profiles.active=dev,demo --server.port=8088`。此模式在 `runtime/` 建立持久 H2 演示库，首次运行自动导入场景、题目和演示账号。接口文档：`http://127.0.0.1:8088/doc.html`。
 3. 在 `interview-ai/frontend/` 执行 `npm ci`；PowerShell 中执行 `$env:API_PROXY_TARGET='http://127.0.0.1:8088'; npm run dev`，打开 `http://127.0.0.1:5173`。候选人 `test01 / 123456`，面试官 `host01 / 123456`，管理员 `admin / admin123`；这些仅为本地演示账号。
 
