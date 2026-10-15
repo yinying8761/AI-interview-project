@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "username": "张明",
+    "email": "zhangming@example.com",
+    "password": "Admin123!",
+    "role": "管理员",
+    "phone": "13800000001",
+    "avatar": "",
+    "token": "mock-token-admin-001",
+    "status": "正常"
+  },
+  {
+    "id": 2,
+    "username": "李华",
+    "email": "lihua@example.com",
+    "password": "Inter123!",
+    "role": "面试官",
+    "phone": "13800000002",
+    "avatar": "",
+    "token": "mock-token-interviewer-002",
+    "status": "正常"
+  },
+  {
+    "id": 3,
+    "username": "王芳",
+    "email": "wangfang@example.com",
+    "password": "Inter123!",
+    "role": "面试官",
+    "phone": "13800000003",
+    "avatar": "",
+    "token": "mock-token-interviewer-003",
+    "status": "正常"
+  },
+  {
+    "id": 4,
+    "username": "赵强",
+    "email": "zhaoqiang@example.com",
+    "password": "Cand123!",
+    "role": "候选人",
+    "phone": "13800000004",
+    "avatar": "",
+    "token": "mock-token-candidate-004",
+    "status": "正常"
+  },
+  {
+    "id": 5,
+    "username": "陈静",
+    "email": "chenjing@example.com",
+    "password": "Cand123!",
+    "role": "候选人",
+    "phone": "13800000005",
+    "avatar": "",
+    "token": "mock-token-candidate-005",
+    "status": "冻结"
+  },
+  {
+    "id": 6,
+    "username": "刘洋",
+    "email": "liuyang@example.com",
+    "password": "Inter123!",
+    "role": "面试官",
+    "phone": "13800000006",
+    "avatar": "",
+    "token": "mock-token-interviewer-006",
+    "status": "正常"
+  },
+  {
+    "id": 19,
+    "username": "徐鑫",
+    "email": "xuxin@example.com",
+    "password": "Admin123!",
+    "role": "管理员",
+    "phone": "13800000019",
+    "avatar": "",
+    "token": "mock-token-admin-019",
+    "status": "正常"
+  }
+]

@@ -1,0 +1,13 @@
+package com.iflytek.interview.interview.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.iflytek.interview.interview.entity.InterviewVideoEvent;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 视频事件 Mapper，提供 interview_video_event 表通用增删改查。
+ */
+@Mapper
+public interface InterviewVideoEventMapper
+        extends BaseMapper<InterviewVideoEvent> {
+}

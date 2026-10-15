@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.iflytek</groupId>
+        <artifactId>interview-ai</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>interview-modules</artifactId>
+    <packaging>pom</packaging>
+
+    <!-- 聚合业务子模块 -->
+    <modules>
+        <module>interview-system</module>
+        <!-- 后续添加其他业务模块 -->
+        <module>interview-interview</module>
+        <module>interview-question</module>
+        <module>interview-file</module>
+        <module>interview-resume</module>
+        <module>interview-job</module>
+    </modules>
+
+</project>

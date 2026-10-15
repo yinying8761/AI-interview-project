@@ -1,0 +1,80 @@
+# ============================================================================
+# 多模态智能模拟面试评测平台 —— 仓库级忽略规则
+# 子工程另有各自的 .gitignore（Java 的 target/、前端的 node_modules/ 等），
+# 本文件补充跨工程统一的忽略项，重点是「隐私数据不进版本库」。
+# ============================================================================
+
+# --------------------------------------------------------- 密钥与私密配置 ----
+# Java 侧本地私密配置：数据库口令、OAuth 客户端密钥。
+# 模板见 interview-ai/interview-bootstrap/src/main/resources/application-local.yml.example
+**/application-local.yml
+**/application-local.*.yml
+!**/application-local.yml.example
+
+# Python AI 服务环境变量：含 DeepSeek API Key。模板见 .env.example
+.env
+.env.local
+*.env.local
+
+# --------------------------------------------------------- 运行期隐私数据 ----
+# Python AI 服务的账号口令、人脸特征、上传简历、面试报告、转写音频
+# 均属本地隐私数据，一律不入库。
+smartspeech_optimized/data/.flask_secret
+smartspeech_optimized/data/auth/
+smartspeech_optimized/data/resumes/
+smartspeech_optimized/runtime/
+
+# 浏览器自动化遗留的会话状态，内含已登录的会话 Cookie
+**/qa-state.json
+
+# --------------------------------------------------------------- 数据库转储 ----
+# 全库导出含账号口令哈希与考生作答原文，禁止入库
+*backup*.sql
+*_bak.sql
+*.sql.bak
+
+# ---------------------------------------------------------------- 构建产物 ----
+target/
+dist/
+dist-ssr/
+build/
+out/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+node_modules/
+
+# ---------------------------------------------------------------- 运行日志 ----
+*.log
+logs/
+
+# ------------------------------------------------------------ Python 运行期 ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ------------------------------------------------------------- 编辑器与系统 ----
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --------------------------------------------------------- 第三方二进制与工具 ----
+# ffmpeg 体积 70MB+，且代码在缺失时会由 imageio-ffmpeg 自动补齐，不入库
+smartspeech_optimized/ffmpeg.exe
+smartspeech_optimized/runtime/ffmpeg/
+
+# 智能体工具的工作区状态
+.pi/
+
+# 教学材料生成与调试的暂存目录（日志、数据库备份、生成产物）；仅保留生成脚本
+_build/*
+!_build/gen_group11.py

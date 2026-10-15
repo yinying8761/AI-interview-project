@@ -1,0 +1,20 @@
+package com.iflytek.interview.system.vo;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+public class UserVO {
+
+    private Long id;
+    private String username;
+    private String email;
+    private String phone;
+    private String nickname;
+    private String avatar;
+    private Integer status;
+    private LocalDateTime createdAt;
+    private List<String> roles;
+}

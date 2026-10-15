@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: interview-ai
+  profiles:
+    # 本地私密配置（数据库口令、OAuth 客户端密钥等）放在 application-local.yml，
+    # 该文件已加入 .gitignore，仓库中不提供；文件不存在时自动跳过，不影响启动。
+    # 新环境请复制 application-local.yml.example 并按需填写。
+    #
+    # 注意顺序：这里必须写成 "dev,local" —— Spring 对多 profile 采取「后者覆盖前者」，
+    #   · 用 profiles.include 时被包含的 profile 会排在最前，反而盖不住 dev；
+    #   · 用 spring.config.import 时导入文档排在 application-dev.yml 之前，同样盖不住。
+    active: dev,local
+
+
+app:
+  name: 多模态智能模拟面试评测平台
+  version: 1.0.0
+  description: 基于AI的面试模拟与评测系统
+  author: 讯飞

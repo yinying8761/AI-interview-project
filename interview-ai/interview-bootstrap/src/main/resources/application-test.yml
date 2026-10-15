@@ -1,0 +1,15 @@
+server:
+  port: 8081
+
+# 数据源配置（暂时注释）
+#spring:
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://192.168.1.100:3306/interview_test
+#    username: test_user
+#    password: test_pass_2024
+
+logging:
+  level:
+    com.iflytek: INFO
+    org.springframework: WARN

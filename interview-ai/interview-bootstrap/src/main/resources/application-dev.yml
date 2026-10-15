@@ -1,0 +1,82 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/interview_ai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    # 口令不写入仓库，请在 application-local.yml 中配置（见 application-local.yml.example）
+    password: ${MYSQL_PASSWORD:}
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      # password:   # 本课本地 Redis 未设密码；生产务必设置
+      database: 0
+  servlet:
+    multipart:
+      max-file-size: 50MB      # 单个文件最大 50MB
+      max-request-size: 100MB  # 单次请求（多文件）最大 100MB
+  security:
+    oauth2:
+      client:
+        registration:
+          gitee:
+            # 真实密钥不写入仓库，请在 application-local.yml 中覆盖。
+            # 这里的占位值仅用于满足 Spring「client-id 不得为空」的校验；
+            # Gitee 登录入口在前端已隐藏，占位不影响账号密码登录与其余功能。
+            client-id: ${GITEE_CLIENT_ID:not-configured}
+            client-secret: ${GITEE_CLIENT_SECRET:not-configured}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - user_info
+        provider:
+          gitee:
+            authorization-uri: https://gitee.com/oauth/authorize
+            token-uri: https://gitee.com/oauth/token
+            user-info-uri: https://gitee.com/api/v5/user
+            user-name-attribute: id
+
+mybatis-plus:
+  configuration:
+    # 开启驼峰命名映射：数据库字段 created_at → Java属性 createdAt
+    map-underscore-to-camel-case: true
+    # 打印SQL日志（开发环境开启，生产环境关闭）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 主键策略：自增
+      id-type: auto
+  # Mapper XML 文件位置（如果有手写SQL）
+  mapper-locations: classpath:mapper/**/*.xml
+  # 实体类包路径（用于类型别名）
+  type-aliases-package: com.iflytek.interview.*.entity
+
+logging:
+  level:
+    com.iflytek: DEBUG
+    org.springframework: INFO
+
+jwt:
+  secret: ${JWT_SECRET:interview-ai-dev-only-change-in-prod}
+  expiration: 86400000   # 单位毫秒 = 24 小时
+
+minio:
+  endpoint: http://192.168.26.130:9000
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: interviewai
+
+app:
+  oauth:
+    frontend-redirect: http://localhost:5173/oauth/callback
+    frontend-bind-redirect: http://localhost:5173/profile
+    login-code-ttl-seconds: 60
+  ai:
+    base-url: http://127.0.0.1:8765
+    default-voice: zh-CN-YunxiNeural
+    connect-timeout: 3000
+    read-timeout: 60000

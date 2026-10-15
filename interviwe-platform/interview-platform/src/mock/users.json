@@ -1,0 +1,22 @@
+[
+  { "id": 1, "username": "张明", "role": "管理员", "email": "zhangming@example.com", "createdAt": "2025-10-01T09:00:00Z", "lastLogin": "2026-08-09T08:30:00Z", "status": "正常" },
+  { "id": 2, "username": "李华", "role": "面试官", "email": "lihua@example.com", "createdAt": "2025-10-15T10:30:00Z", "lastLogin": "2026-08-08T17:45:00Z", "status": "正常" },
+  { "id": 3, "username": "王芳", "role": "面试官", "email": "wangfang@example.com", "createdAt": "2025-11-01T09:15:00Z", "lastLogin": "2026-08-09T07:20:00Z", "status": "正常" },
+  { "id": 4, "username": "赵强", "role": "候选人", "email": "zhaoqiang@example.com", "createdAt": "2025-11-20T14:00:00Z", "lastLogin": "2026-08-07T16:30:00Z", "status": "正常" },
+  { "id": 5, "username": "陈静", "role": "候选人", "email": "chenjing@example.com", "createdAt": "2025-12-01T11:00:00Z", "lastLogin": "2026-08-06T09:15:00Z", "status": "冻结" },
+  { "id": 6, "username": "刘洋", "role": "面试官", "email": "liuyang@example.com", "createdAt": "2025-12-15T09:30:00Z", "lastLogin": "2026-08-09T06:00:00Z", "status": "正常" },
+  { "id": 7, "username": "孙磊", "role": "候选人", "email": "sunlei@example.com", "createdAt": "2026-01-05T10:00:00Z", "lastLogin": "2026-08-05T14:20:00Z", "status": "正常" },
+  { "id": 8, "username": "周婷", "role": "候选人", "email": "zhouting@example.com", "createdAt": "2026-01-20T14:30:00Z", "lastLogin": "2026-08-04T11:45:00Z", "status": "正常" },
+  { "id": 9, "username": "吴刚", "role": "面试官", "email": "wugang@example.com", "createdAt": "2026-02-01T09:00:00Z", "lastLogin": "2026-08-08T15:30:00Z", "status": "正常" },
+  { "id": 10, "username": "郑雪", "role": "候选人", "email": "zhengxue@example.com", "createdAt": "2026-02-15T11:30:00Z", "lastLogin": "2026-08-03T10:00:00Z", "status": "冻结" },
+  { "id": 11, "username": "黄峰", "role": "候选人", "email": "huangfeng@example.com", "createdAt": "2026-03-01T10:15:00Z", "lastLogin": "2026-08-09T05:30:00Z", "status": "正常" },
+  { "id": 12, "username": "林佳", "role": "面试官", "email": "linjia@example.com", "createdAt": "2026-03-15T09:45:00Z", "lastLogin": "2026-08-07T18:00:00Z", "status": "正常" },
+  { "id": 13, "username": "何宇", "role": "候选人", "email": "heyu@example.com", "createdAt": "2026-04-01T14:00:00Z", "lastLogin": "2026-08-01T12:30:00Z", "status": "已注销" },
+  { "id": 14, "username": "马俊", "role": "候选人", "email": "majun@example.com", "createdAt": "2026-04-15T10:30:00Z", "lastLogin": "2026-08-08T09:15:00Z", "status": "正常" },
+  { "id": 15, "username": "罗丽", "role": "面试官", "email": "luoli@example.com", "createdAt": "2026-05-01T09:00:00Z", "lastLogin": "2026-08-09T04:00:00Z", "status": "正常" },
+  { "id": 16, "username": "朱晨", "role": "候选人", "email": "zhuchen@example.com", "createdAt": "2026-05-20T11:00:00Z", "lastLogin": "2026-07-30T16:45:00Z", "status": "正常" },
+  { "id": 17, "username": "胡涛", "role": "候选人", "email": "hutao@example.com", "createdAt": "2026-06-01T10:00:00Z", "lastLogin": "2026-08-08T20:30:00Z", "status": "冻结" },
+  { "id": 18, "username": "谢梅", "role": "候选人", "email": "xiemei@example.com", "createdAt": "2026-06-15T14:30:00Z", "lastLogin": "2026-08-07T11:00:00Z", "status": "正常" },
+  { "id": 19, "username": "徐鑫", "role": "管理员", "email": "xuxin@example.com", "createdAt": "2026-07-01T09:00:00Z", "lastLogin": "2026-08-09T08:00:00Z", "status": "正常" },
+  { "id": 20, "username": "杨帆", "role": "候选人", "email": "yangfan@example.com", "createdAt": "2026-07-20T10:30:00Z", "lastLogin": "2026-08-06T13:45:00Z", "status": "已注销" }
+]

@@ -1,0 +1,24 @@
+# ============================================================================
+# 本地私密配置示例
+# ----------------------------------------------------------------------------
+# 用法：把本文件复制为同目录下的 application-local.yml，填入本机真实值。
+#      application-local.yml 已被 .gitignore 忽略，不会提交到版本库。
+# 载入：application.yml 中通过 spring.config.import 自动载入，优先级高于
+#      application-dev.yml；文件不存在时自动跳过，不影响启动。
+# ============================================================================
+
+spring:
+  datasource:
+    # 本机 MySQL 账号口令（建库脚本见 interview-ai/sql/interview_ai.sql）
+    username: root
+    password: ""
+
+  security:
+    oauth2:
+      client:
+        registration:
+          gitee:
+            # Gitee 第三方登录应用凭证：https://gitee.com/oauth/applications
+            # 留空则该登录入口不可用，不影响账号密码登录与其余功能。
+            client-id: ""
+            client-secret: ""
