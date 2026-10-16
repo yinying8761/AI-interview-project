@@ -30,7 +30,11 @@
         <el-menu-item index="/records">
           <el-icon><Document /></el-icon>
           <template #title>{{ isInterviewerPortal ? '面试评审' : '面试记录' }}</template>
-        </el-menu-item>
+        </el-menu-item>
+        <el-menu-item v-if="store.isInterviewerPortal" index="/resume-review">
+          <el-icon><Files /></el-icon>
+          <template #title>候选人简历</template>
+        </el-menu-item>
         <el-menu-item v-if="store.hasPermission('question:view')" index="/questions">
           <el-icon><Notebook /></el-icon>
           <template #title>{{ isInterviewerPortal ? '题库参考' : '题库管理' }}</template>

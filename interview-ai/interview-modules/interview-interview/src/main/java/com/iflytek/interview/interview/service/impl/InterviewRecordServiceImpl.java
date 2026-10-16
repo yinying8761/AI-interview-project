@@ -1,11 +1,13 @@
 package com.iflytek.interview.interview.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iflytek.interview.common.exception.BusinessException;
 import com.iflytek.interview.common.exception.ErrorCode;
 import com.iflytek.interview.common.security.SecurityUtil;
+import com.iflytek.interview.interview.dto.FormalInterviewCreateRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionCreateRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionScheduleRequest;
 import com.iflytek.interview.interview.dto.RecordScoreDTO;
@@ -21,8 +23,15 @@ import com.iflytek.interview.interview.mapper.ScenarioMapper;
 import com.iflytek.interview.interview.service.InterviewRecordService;
 import com.iflytek.interview.interview.service.InterviewVisionService;
 import com.iflytek.interview.interview.service.ReportGenerator;
+import com.iflytek.interview.interview.vo.CandidateVO;
 import com.iflytek.interview.question.service.PaperQueryService;
 import com.iflytek.interview.question.vo.QuestionVO;
+import com.iflytek.interview.system.entity.Role;
+import com.iflytek.interview.system.entity.User;
+import com.iflytek.interview.system.entity.UserRole;
+import com.iflytek.interview.system.service.RoleService;
+import com.iflytek.interview.system.service.UserRoleService;
+import com.iflytek.interview.system.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -46,6 +55,9 @@ public class InterviewRecordServiceImpl
 
     private static final String SESSION_KEY = "interview:session:%d";
     private static final String SESSION_EVENT_KEY = "interview:session:events:%d";
+
+    private static final String TYPE_MOCK = "MOCK";
+    private static final String TYPE_FORMAL = "FORMAL";
 
     @Autowired
     private ReportGenerator reportGenerator;
@@ -71,6 +83,15 @@ public class InterviewRecordServiceImpl
     @Autowired
     private InterviewVisionService visionService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private RoleService roleService;
+
+    @Autowired
+    private UserRoleService userRoleService;
+
     // ===== 基础面试记录 =====
 
     @Override
@@ -85,6 +106,7 @@ public class InterviewRecordServiceImpl
         record.setUserId(userId);
         record.setScenarioId(scenarioId);
         record.setPaperId(paperId);
+        record.setInterviewType(TYPE_MOCK);
         record.setStatus(InterviewStatus.PENDING.getCode());
         save(record);
         log.info("创建面试: recordId={}, userId={}, scenarioId={}, paperId={}",
@@ -270,8 +292,11 @@ public class InterviewRecordServiceImpl
 
     @Override
     public List<InterviewRecord> listForCurrentUser() {
-        if (SecurityUtil.hasRole("admin") || SecurityUtil.hasRole("interviewer")) {
+        if (SecurityUtil.hasRole("admin")) {
             return baseMapper.selectAllWithCandidate();
+        }
+        if (SecurityUtil.hasRole("interviewer")) {
+            return baseMapper.selectFormalForInterviewer(SecurityUtil.getCurrentUserId());
         }
         Long userId = SecurityUtil.getCurrentUserId();
         return lambdaQuery()
@@ -310,6 +335,7 @@ public class InterviewRecordServiceImpl
         record.setUserId(userId);
         record.setScenarioId(request.getScenarioId());
         record.setPaperId(request.getPaperId());
+        record.setInterviewType(TYPE_MOCK);
 
         record.setRoomCode(generateRoomCode());
         record.setScheduledAt(request.getScheduledAt());
@@ -494,8 +520,8 @@ public class InterviewRecordServiceImpl
         }
         boolean admin = SecurityUtil.hasRole("admin");
         boolean interviewer = SecurityUtil.hasRole("interviewer")
-                && (record.getInterviewerId() == null
-                        || userId.equals(record.getInterviewerId()));
+                && TYPE_FORMAL.equals(record.getInterviewType())
+                && userId.equals(record.getInterviewerId());
         boolean candidate = userId.equals(record.getUserId());
         if (!admin && !interviewer && !candidate) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
@@ -591,6 +617,89 @@ public class InterviewRecordServiceImpl
             log.warn("会话事件载荷序列化失败", e);
             return null;
         }
+    }
+
+    // ===== 正式面试（面试官发布） =====
+
+    @Override
+    public List<CandidateVO> listCandidates() {
+        List<Long> candidateIds = listUserIdsByRole("candidate");
+        if (candidateIds.isEmpty()) {
+            return List.of();
+        }
+        return userService.listByIds(candidateIds).stream()
+                .filter(u -> u.getStatus() == null || u.getStatus() == 1)
+                .map(u -> {
+                    CandidateVO vo = new CandidateVO();
+                    vo.setId(u.getId());
+                    vo.setUsername(u.getUsername());
+                    vo.setNickname(u.getNickname());
+                    return vo;
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public InterviewRecord publishFormal(Long interviewerId, FormalInterviewCreateRequest request) {
+        if (request.getCandidateId() == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR);
+        }
+        if (userService.getById(request.getCandidateId()) == null
+                || !isUserRole(request.getCandidateId(), "candidate")) {
+            throw new BusinessException(400, "候选人不存在或角色不正确");
+        }
+        validateScenario(request.getScenarioId());
+        validateSchedule(request.getScheduledAt(), request.getPlannedEndAt());
+        if (request.getPaperId() != null) {
+            paperQueryService.validatePaper(request.getPaperId(), request.getScenarioId());
+        }
+        if (request.getScheduledAt() != null) {
+            checkCandidateConflict(request.getCandidateId(), null,
+                    request.getScheduledAt(), request.getPlannedEndAt());
+        }
+
+        InterviewRecord record = new InterviewRecord();
+        record.setUserId(request.getCandidateId());
+        record.setInterviewerId(interviewerId);
+        record.setScenarioId(request.getScenarioId());
+        record.setPaperId(request.getPaperId());
+        record.setInterviewType(TYPE_FORMAL);
+        record.setRoomCode(generateRoomCode());
+        record.setScheduledAt(request.getScheduledAt());
+        record.setPlannedEndAt(request.getPlannedEndAt());
+        record.setReminderSent(0);
+        record.setQuestionIndex(0);
+        record.setMetadataJson(request.getMetadataJson());
+        record.setStatus(InterviewStatus.PENDING.getCode());
+        save(record);
+
+        saveEvent(record.getId(), interviewerId, "FORMAL_INTERVIEW_PUBLISHED", toJson(request));
+        log.info("发布正式面试: recordId={}, interviewerId={}, candidateId={}, scenarioId={}",
+                record.getId(), interviewerId, request.getCandidateId(), request.getScenarioId());
+        return record;
+    }
+
+    private boolean isUserRole(Long userId, String roleCode) {
+        Role role = roleService.getOne(
+                new LambdaQueryWrapper<Role>().eq(Role::getCode, roleCode), false);
+        if (role == null) {
+            return false;
+        }
+        return userRoleService.count(new LambdaQueryWrapper<UserRole>()
+                .eq(UserRole::getUserId, userId)
+                .eq(UserRole::getRoleId, role.getId())) > 0;
+    }
+
+    private List<Long> listUserIdsByRole(String roleCode) {
+        Role role = roleService.getOne(
+                new LambdaQueryWrapper<Role>().eq(Role::getCode, roleCode), false);
+        if (role == null) {
+            return List.of();
+        }
+        return userRoleService.list(new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getRoleId, role.getId()))
+                .stream().map(UserRole::getUserId).distinct().toList();
     }
 }
 

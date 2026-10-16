@@ -67,6 +67,12 @@ const routes = [
         meta: { title: '我的简历', icon: 'Document' }
       },
       {
+        path: 'resume-review',
+        name: 'ResumeReview',
+        component: () => import('../views/InterviewerResumes.vue'),
+        meta: { title: '候选人简历', icon: 'Document', interviewerOnly: true }
+      },
+      {
         path: 'questions',
         name: 'QuestionBank',
         component: () => import('../views/QuestionBank.vue'),
@@ -148,6 +154,11 @@ router.beforeEach((to, from, next) => {
 
   // 视频面试间放行候选人与面试官（主持人），仅排除管理员
   if (to.meta.videoRoom && store.isAdmin) {
+    return next('/dashboard')
+  }
+
+  // 候选人简历页仅面试官工作台可见
+  if (to.meta.interviewerOnly && !store.isInterviewerPortal) {
     return next('/dashboard')
   }
 

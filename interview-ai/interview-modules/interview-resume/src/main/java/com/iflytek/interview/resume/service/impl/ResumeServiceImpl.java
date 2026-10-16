@@ -154,21 +154,16 @@ public class ResumeServiceImpl extends ServiceImpl<ResumeMapper, Resume> impleme
         if (resume == null) {
             return null;
         }
-        ResumeVersion latest = resumeVersionMapper.selectOne(
-                new LambdaQueryWrapper<ResumeVersion>()
-                        .eq(ResumeVersion::getResumeId, resume.getId())
-                        .orderByDesc(ResumeVersion::getVersion)
-                        .last("LIMIT 1")
-        );
-        ResumeParseResult parseResult = buildParseResult(resume);
-        ResumeVO vo = new ResumeVO();
-        vo.setResumeId(resume.getId());
-        vo.setVersion(latest == null ? resume.getCurrentVersion() : latest.getVersion());
-        vo.setFileName(latest == null ? null : latest.getFileName());
-        vo.setFileUrl(latest == null ? null
-                : minioUtil.getPresignedUrl(latest.getObjectName(), PRESIGN_EXPIRY_SECONDS));
-        vo.setParseResult(parseResult);
-        return vo;
+        return buildVO(resume);
+    }
+
+    @Override
+    public ResumeVO getDetail(Long resumeId) {
+        Resume resume = getById(resumeId);
+        if (resume == null) {
+            return null;
+        }
+        return buildVO(resume);
     }
 
     @Override
@@ -246,6 +241,27 @@ public class ResumeServiceImpl extends ServiceImpl<ResumeMapper, Resume> impleme
         if (resume == null || !resume.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
+    }
+
+    private ResumeVersion getLatestVersion(Long resumeId) {
+        return resumeVersionMapper.selectOne(
+                new LambdaQueryWrapper<ResumeVersion>()
+                        .eq(ResumeVersion::getResumeId, resumeId)
+                        .orderByDesc(ResumeVersion::getVersion)
+                        .last("LIMIT 1")
+        );
+    }
+
+    private ResumeVO buildVO(Resume resume) {
+        ResumeVersion latest = getLatestVersion(resume.getId());
+        ResumeVO vo = new ResumeVO();
+        vo.setResumeId(resume.getId());
+        vo.setVersion(latest == null ? resume.getCurrentVersion() : latest.getVersion());
+        vo.setFileName(latest == null ? null : latest.getFileName());
+        vo.setFileUrl(latest == null ? null
+                : minioUtil.getPresignedUrl(latest.getObjectName(), PRESIGN_EXPIRY_SECONDS));
+        vo.setParseResult(buildParseResult(resume));
+        return vo;
     }
 
     private ResumeVersionVO toVersionVO(ResumeVersion v) {

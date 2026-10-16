@@ -8,6 +8,9 @@
       </div>
       <div class="header-actions">
         <el-tag v-if="resume" type="success" effect="light">已解析</el-tag>
+        <el-button v-if="resume" type="success" :icon="Promotion" :loading="sending" @click="openSendDialog">
+          发送给面试官
+        </el-button>
         <el-button type="primary" :icon="UploadFilled" :loading="uploading" @click="reUpload">
           {{ resume ? '更换简历' : '上传简历' }}
         </el-button>
@@ -22,6 +25,24 @@
       <el-icon class="is-loading"><Loading /></el-icon>
       <span>正在上传并解析，请稍候…</span>
     </div>
+
+    <!-- 发送给面试官 -->
+    <el-dialog v-model="sendDialogVisible" title="发送简历给面试官" width="480px">
+      <el-form label-width="70px">
+        <el-form-item label="面试官">
+          <el-select v-model="sendForm.interviewerId" placeholder="请选择面试官" style="width: 100%">
+            <el-option v-for="it in interviewers" :key="it.id" :label="it.nickname || it.username" :value="it.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="留言">
+          <el-input v-model="sendForm.message" type="textarea" :rows="3" placeholder="可填写备注（选填）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="sendDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="sending" @click="doSend">发送</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 空态：先引导上传 -->
     <el-card v-if="!resume && !uploading" class="panel-card empty-card" shadow="never">
@@ -151,6 +172,23 @@
           </el-table>
         </div>
       </el-card>
+
+      <!-- 已发送记录 -->
+      <el-card class="panel-card" shadow="never">
+        <template #header>
+          <div class="card-header"><el-icon><Promotion /></el-icon><span>已发送记录</span><el-tag size="small" effect="plain" type="info">{{ sentList.length }}</el-tag></div>
+        </template>
+        <el-table :data="sentList" style="width: 100%" empty-text="还没有发送过简历">
+          <el-table-column prop="interviewerName" label="面试官" min-width="120" />
+          <el-table-column prop="fileName" label="简历文件" min-width="200" show-overflow-tooltip />
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.status === 'READ' ? 'success' : 'info'">{{ row.status === 'READ' ? '已读' : '待查看' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="发送时间" min-width="170"><template #default="{ row }">{{ row.sentAt || '-' }}</template></el-table-column>
+        </el-table>
+      </el-card>
     </template>
   </div>
 </template>
@@ -158,11 +196,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import {
-  UploadFilled, Document, User, Collection, School, Tickets, Star, Clock, DataAnalysis, Loading, CaretRight, CaretBottom
+  UploadFilled, Document, User, Collection, School, Tickets, Star, Clock, DataAnalysis, Loading, CaretRight, CaretBottom, Promotion
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
-  uploadResume, getCurrentResume, listResumeVersions, getResumeFileUrl
+  uploadResume, getCurrentResume, listResumeVersions, getResumeFileUrl,
+  listInterviewers, sendResume, listSentResumes
 } from '../api/resume'
 
 const uploading = ref(false)
@@ -170,6 +209,12 @@ const resume = ref(null)
 const versions = ref([])
 const fileInputRef = ref(null)
 const showVersions = ref(false)
+
+const sending = ref(false)
+const sendDialogVisible = ref(false)
+const interviewers = ref([])
+const sentList = ref([])
+const sendForm = ref({ interviewerId: null, message: '' })
 
 const stats = computed(() => ({
   skills: resume.value?.parseResult?.skills?.length ?? 0,
@@ -238,12 +283,50 @@ const openCurrent = () => {
   }
 }
 
+const openSendDialog = async () => {
+  sendForm.value = { interviewerId: null, message: '' }
+  sendDialogVisible.value = true
+  if (!interviewers.value.length) {
+    try {
+      const res = await listInterviewers()
+      interviewers.value = res.data || []
+    } catch (e) { /* 加载失败时忽略，用户可重开重试 */ }
+  }
+}
+
+const doSend = async () => {
+  if (!sendForm.value.interviewerId) {
+    ElMessage.warning('请选择面试官')
+    return
+  }
+  if (!resume.value?.resumeId) return
+  sending.value = true
+  try {
+    await sendResume(resume.value.resumeId, sendForm.value)
+    ElMessage.success('已发送给面试官')
+    sendDialogVisible.value = false
+    await loadSent()
+  } catch (e) {
+    ElMessage.error(e?.message || '发送失败')
+  } finally {
+    sending.value = false
+  }
+}
+
+const loadSent = async () => {
+  try {
+    const res = await listSentResumes()
+    sentList.value = res.data || []
+  } catch (e) { /* 忽略 */ }
+}
+
 onMounted(async () => {
   try {
     const res = await getCurrentResume()
     resume.value = res.data
     if (res.data) await loadVersions(res.data.resumeId)
   } catch (e) { /* 未上传时忽略 */ }
+  loadSent()
 })
 </script>
 

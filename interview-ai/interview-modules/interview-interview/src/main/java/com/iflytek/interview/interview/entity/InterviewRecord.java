@@ -19,6 +19,7 @@ public class InterviewRecord {
     private Long scenarioId;
     private Long paperId;
     private Long interviewerId;
+    private String interviewType;
     private String roomCode;
     private String status;
     private BigDecimal score;

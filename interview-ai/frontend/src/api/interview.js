@@ -175,6 +175,15 @@ export function completeSession(id, data) {
 export function cancelSession(id, data) {
   return request.post(`/interview-sessions/${id}/cancel`, data)
 }
+
+// ==================== 正式面试（面试官发布） ====================
+export function listCandidates() {
+  return request.get('/interview-sessions/candidates')
+}
+
+export function publishFormalInterview(data) {
+  return request.post('/interview-sessions/publish', data)
+}
 // ==================== 视觉分析模块 ====================
 export function getVisionContext(recordId, config) {
   return request.get(`/interview-vision/records/${recordId}/context`, config)

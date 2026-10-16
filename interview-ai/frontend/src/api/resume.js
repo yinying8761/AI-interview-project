@@ -23,3 +23,24 @@ export function listResumeKeywords(resumeId) {
 export function getResumeFileUrl(versionId) {
   return request.get(`/resumes/versions/${versionId}/url`)
 }
+
+// ==================== 简历发送给面试官 ====================
+export function listInterviewers() {
+  return request.get('/resumes/interviewers')
+}
+
+export function sendResume(resumeId, data) {
+  return request.post(`/resumes/${resumeId}/send`, data)
+}
+
+export function listSentResumes() {
+  return request.get('/resumes/sent')
+}
+
+export function listReceivedResumes() {
+  return request.get('/resumes/received')
+}
+
+export function getReceivedResumeDetail(deliveryId) {
+  return request.get(`/resumes/received/${deliveryId}`)
+}

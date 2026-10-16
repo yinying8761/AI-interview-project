@@ -6,6 +6,7 @@
       </h2>
       <div class="toolbar">
         <el-button :loading="loading" @click="loadRecords">刷新记录</el-button>
+        <el-button v-if="store.isInterviewerPortal" type="primary" @click="openPublish">发布正式面试</el-button>
         <el-select v-model="filterStatus" placeholder="筛选状态" clearable style="width: 140px"
           @change="applyFilter">
           <el-option label="全部" value="" />
@@ -39,6 +40,13 @@
           <template #default="{ row }">
             <el-tag :type="getRecordType(row) === 'video' ? 'primary' : 'info'" size="small">
               {{ getRecordType(row) === 'llm' ? '大模型面试官' : getRecordType(row) === 'video' ? 'AI 模拟面试' : '文字答题' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="面试性质" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.interviewType === 'FORMAL' ? 'warning' : 'info'" size="small">
+              {{ row.interviewType === 'FORMAL' ? '正式面试' : '模拟面试' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -161,6 +169,34 @@
         <el-button type="primary" :loading="scoreSaving" @click="handleScore">保存评分</el-button>
       </template>
     </el-dialog>
+
+    <!-- 发布正式面试 -->
+    <el-dialog v-model="publishVisible" title="发布正式面试" width="560px" destroy-on-close>
+      <el-form label-width="90px">
+        <el-form-item label="候选人">
+          <el-select v-model="publishForm.candidateId" placeholder="请选择候选人" style="width: 100%">
+            <el-option v-for="c in candidates" :key="c.id" :label="c.nickname || c.username" :value="c.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="面试场景">
+          <el-select v-model="publishForm.scenarioId" placeholder="请选择场景" style="width: 100%">
+            <el-option v-for="s in scenarios" :key="s.id" :label="s.name" :value="s.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="开始时间">
+          <el-date-picker v-model="publishForm.scheduledAt" type="datetime" placeholder="可选"
+            value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker v-model="publishForm.plannedEndAt" type="datetime" placeholder="可选"
+            value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="publishVisible = false">取消</el-button>
+        <el-button type="primary" :loading="publishing" @click="handlePublish">发布</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -172,7 +208,7 @@ import { useUserStore } from '../store/user'
 import {
   listMyRecords, listScenarios, scoreInterview,
   joinSession, startSession, completeSession, cancelSession,
-  listSessionEvents
+  listSessionEvents, listCandidates, publishFormalInterview
 } from '../api/interview'
 
 const router = useRouter()
@@ -204,6 +240,11 @@ const scoreForm = reactive({ score: 80, aiFeedback: '' })
 const eventsVisible = ref(false)
 const currentRecordId = ref(null)
 const events = ref([])
+
+const publishVisible = ref(false)
+const publishing = ref(false)
+const candidates = ref([])
+const publishForm = reactive({ candidateId: null, scenarioId: null, scheduledAt: null, plannedEndAt: null })
 
 const scenarioNameMap = computed(() => {
   const map = {}
@@ -359,6 +400,38 @@ const loadRecords = async () => {
     scenarios.value = sRes.data || []
   } catch (e) { /* handled */ }
   loading.value = false
+}
+
+const openPublish = async () => {
+  publishForm.candidateId = null
+  publishForm.scenarioId = null
+  publishForm.scheduledAt = null
+  publishForm.plannedEndAt = null
+  publishVisible.value = true
+  if (!candidates.value.length) {
+    try {
+      const res = await listCandidates()
+      candidates.value = res.data || []
+    } catch (e) { /* 加载失败时忽略，用户可重开重试 */ }
+  }
+}
+
+const handlePublish = async () => {
+  if (!publishForm.candidateId || !publishForm.scenarioId) {
+    ElMessage.warning('请选择候选人和面试场景')
+    return
+  }
+  publishing.value = true
+  try {
+    await publishFormalInterview(publishForm)
+    ElMessage.success('正式面试已发布')
+    publishVisible.value = false
+    await loadRecords()
+  } catch (e) {
+    ElMessage.error(e?.message || '发布失败')
+  } finally {
+    publishing.value = false
+  }
 }
 
 onMounted(loadRecords)

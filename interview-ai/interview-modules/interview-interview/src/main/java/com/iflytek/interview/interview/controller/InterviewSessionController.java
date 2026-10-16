@@ -3,11 +3,13 @@ package com.iflytek.interview.interview.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.iflytek.interview.common.response.Result;
 import com.iflytek.interview.common.security.SecurityUtil;
+import com.iflytek.interview.interview.dto.FormalInterviewCreateRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionCreateRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionEventRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionScheduleRequest;
 import com.iflytek.interview.interview.entity.InterviewRecord;
 import com.iflytek.interview.interview.entity.InterviewSessionEvent;
+import com.iflytek.interview.interview.vo.CandidateVO;
 import com.iflytek.interview.interview.vo.InterviewStateSnapshot;
 import com.iflytek.interview.interview.mapper.InterviewSessionEventMapper;
 import com.iflytek.interview.interview.service.InterviewRecordService;
@@ -128,5 +130,20 @@ public class InterviewSessionController {
                 request.getEventType(),
                 request.getPayloadJson());
         return Result.success();
+    }
+
+    /** 列出全部在职候选人，供面试官发布正式面试时选择 */
+    @PreAuthorize("hasRole('interviewer') and !hasRole('admin')")
+    @GetMapping("/candidates")
+    public Result<List<CandidateVO>> candidates() {
+        return Result.success(sessionService.listCandidates());
+    }
+
+    /** 面试官向候选人发布一场正式面试 */
+    @PreAuthorize("hasRole('interviewer') and !hasRole('admin')")
+    @PostMapping("/publish")
+    public Result<InterviewRecord> publish(@RequestBody FormalInterviewCreateRequest request) {
+        return Result.success(sessionService.publishFormal(
+                SecurityUtil.getCurrentUserId(), request));
     }
 }

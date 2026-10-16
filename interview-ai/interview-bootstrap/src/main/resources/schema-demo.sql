@@ -608,6 +608,7 @@ ALTER TABLE `interview_record` ADD COLUMN `planned_end_at` DATETIME DEFAULT NULL
 ALTER TABLE `interview_record` ADD COLUMN `reminder_sent` TINYINT DEFAULT 0;
 ALTER TABLE `interview_record` ADD COLUMN `question_index` INT DEFAULT 0;
 ALTER TABLE `interview_record` ADD COLUMN `metadata_json` LONGTEXT DEFAULT NULL;
+ALTER TABLE `interview_record` ADD COLUMN `interview_type` VARCHAR(20) NOT NULL DEFAULT 'MOCK';
 ALTER TABLE `interview_record` ADD UNIQUE KEY `uk_record_room_26` (`room_code`);
 ALTER TABLE `interview_record` ADD KEY `idx_record_user_status_time_27` (`user_id`, `status`, `scheduled_at`);
 ALTER TABLE `interview_record` ADD KEY `idx_record_scheduled_reminder_28` (`status`, `scheduled_at`, `reminder_sent`);
@@ -831,4 +832,19 @@ CREATE TABLE IF NOT EXISTS user_oauth_binding (
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  UNIQUE KEY `uk_oauth_provider_55` (provider, provider_user_id)
+);
+
+CREATE TABLE IF NOT EXISTS `resume_delivery` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `resume_id` BIGINT NOT NULL,
+  `version_id` BIGINT NOT NULL,
+  `candidate_id` BIGINT NOT NULL,
+  `interviewer_id` BIGINT NOT NULL,
+  `message` VARCHAR(255),
+  `status` VARCHAR(32) NOT NULL DEFAULT 'SENT',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_delivery_candidate_56` (`candidate_id`),
+  KEY `idx_delivery_interviewer_57` (`interviewer_id`),
+  KEY `idx_delivery_resume_58` (`resume_id`)
 );

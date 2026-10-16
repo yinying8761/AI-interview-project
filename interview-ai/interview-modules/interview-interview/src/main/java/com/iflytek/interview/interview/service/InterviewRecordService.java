@@ -1,10 +1,12 @@
 package com.iflytek.interview.interview.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.iflytek.interview.interview.dto.FormalInterviewCreateRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionCreateRequest;
 import com.iflytek.interview.interview.dto.InterviewSessionScheduleRequest;
 import com.iflytek.interview.interview.dto.RecordScoreDTO;
 import com.iflytek.interview.interview.entity.InterviewRecord;
+import com.iflytek.interview.interview.vo.CandidateVO;
 import com.iflytek.interview.question.vo.QuestionVO;
 
 import java.util.List;
@@ -44,4 +46,12 @@ public interface InterviewRecordService extends IService<InterviewRecord> {
 
     /** 写入一条会话过程事件。 */
     void saveEvent(Long recordId, Long operatorId, String eventType, String payloadJson);
+
+    // ===== 正式面试（面试官发布） =====
+
+    /** 列出全部在职候选人，供面试官发布正式面试时选择 */
+    List<CandidateVO> listCandidates();
+
+    /** 面试官向候选人发布一场正式面试 */
+    InterviewRecord publishFormal(Long interviewerId, FormalInterviewCreateRequest request);
 }

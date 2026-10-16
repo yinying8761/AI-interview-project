@@ -70,6 +70,7 @@ CREATE TABLE `interview_record` (
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `scenario_id` BIGINT NOT NULL COMMENT '场景ID',
     `paper_id` BIGINT DEFAULT NULL COMMENT '试卷ID（使用固定试卷答题时填写）',
+    `interview_type` VARCHAR(20) NOT NULL DEFAULT 'MOCK' COMMENT 'MOCK-模拟面试 FORMAL-正式面试',
     `status` VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/ongoing/completed/cancelled',
     `score` DECIMAL(5,2) COMMENT '总分',
     `duration` INT COMMENT '面试时长（秒）',
@@ -335,6 +336,21 @@ CREATE TABLE `resume_keyword` (
   KEY `idx_resume_id` (`resume_id`),
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='简历关键词表';
+
+CREATE TABLE `resume_delivery` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '发送ID',
+  `resume_id` BIGINT NOT NULL COMMENT '简历ID',
+  `version_id` BIGINT NOT NULL COMMENT '发送的简历版本ID',
+  `candidate_id` BIGINT NOT NULL COMMENT '候选人(发送者)用户ID',
+  `interviewer_id` BIGINT NOT NULL COMMENT '面试官(接收者)用户ID',
+  `message` VARCHAR(255) COMMENT '留言备注',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'SENT' COMMENT 'SENT/READ',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `idx_delivery_candidate` (`candidate_id`),
+  KEY `idx_delivery_interviewer` (`interviewer_id`),
+  KEY `idx_delivery_resume` (`resume_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='简历发送记录表';
 
 -- ========== 十五、题库域模块（第4讲：题库管理与智能组卷） ==========
 -- 题目标签表

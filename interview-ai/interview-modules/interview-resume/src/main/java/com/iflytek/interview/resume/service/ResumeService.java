@@ -13,6 +13,7 @@ import java.util.List;
 public interface ResumeService extends IService<Resume> {
     ResumeVO uploadAndParse(Long userId, MultipartFile file) throws IOException;
     ResumeVO getCurrent(Long userId);
+    ResumeVO getDetail(Long resumeId);
     List<ResumeVersionVO> listVersions(Long resumeId, Long userId);
     List<ResumeKeyword> listKeywords(Long resumeId, Long userId);
     String getVersionPresignedUrl(Long versionId, Long userId);

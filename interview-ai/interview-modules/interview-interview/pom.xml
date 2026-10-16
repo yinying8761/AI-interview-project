@@ -25,6 +25,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- 依赖用户/角色模块：面试官发布正式面试时校验候选人 -->
+        <dependency>
+            <groupId>com.iflytek</groupId>
+            <artifactId>interview-system</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- 第06讲：提供 /ws/interview 信令通道 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
