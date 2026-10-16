@@ -1,0 +1,74 @@
+多模态智能模拟面试评测平台 v1.1.0 —— 构建与自动化测试记录
+源码版本：30d718a　　记录时间：2026-10-15
+执行环境：Windows 11 / JDK 21.0.5 / Maven 3.9.9 / Node v24.15.0 / Python 3.10.6
+
+========================================================================
+一、后端构建与单元测试（Maven）
+========================================================================
+命令：mvn -f interview-ai/pom.xml -B -ntp test
+结果：BUILD SUCCESS　Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] Reactor Build Order:
+[INFO] Building interview-ai 1.0.0                                       [1/10]
+[INFO] Building interview-common 1.0.0                                   [2/10]
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in com.iflytek.interview.common.SecurityContractTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Building interview-modules 1.0.0                                  [3/10]
+[INFO] Building interview-system 1.0.0                                   [4/10]
+[INFO] Building interview-question 1.0.0                                 [5/10]
+[INFO] Building interview-interview 1.0.0                                [6/10]
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.864 s -- in com.iflytek.interview.interview.AcceptanceRegressionTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Building interview-file 1.0.0                                     [7/10]
+[INFO] Building interview-resume 1.0.0                                   [8/10]
+[INFO] Building interview-job 1.0.0                                      [9/10]
+[INFO] Building interview-bootstrap 1.0.0                               [10/10]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  12.743 s
+
+========================================================================
+二、现场验收冒烟测试（tools/）
+========================================================================
+
+[1] tools/smoke_test.py —— 登录／预约落库／换角色查询／非法输入／越权访问
+    BASE = http://127.0.0.1:8088/api　　执行时间：2026-10-15T21:25:47.188284
+    结果：22/22 passed
+      PASS  未登录访问记录
+      PASS  登录 test01
+      PASS  登录 admin
+      PASS  登录 host01
+      PASS  空密码参数校验
+      PASS  读取真实场景
+      PASS  候选人预约落库
+      PASS  刷新及换角色查询 test01
+      PASS  刷新及换角色查询 admin
+      PASS  刷新及换角色查询 host01
+      PASS  重复时间预约冲突
+      PASS  不存在场景
+      PASS  管理员不能冒充候选人预约
+      PASS  注册第二位模拟候选人
+      PASS  他人记录详情权限
+      PASS  他人状态快照权限
+      PASS  取消预约
+      PASS  已取消记录不能启动
+      PASS  退出 test01
+      PASS  退出 admin
+      PASS  退出 host01
+      PASS  退出后令牌失效
+
+[2] tools/smoke_ai.py —— 大模型真实出题与问答评分
+    结果：passed=True　recordId=2
+    生成首题：你好，很高兴开始今天的面试。请从简历中挑一段你最想深入聊的项目经历，介绍一下你的具体职责、采用的技术方案，以及最终取得的可量化结果。
+    问答得分：45.0　综合分：None
+    追溯报告核验：追溯报告 passed=True textStatus=已评估 visionStatus=未评估
+
+[3] tools/smoke_vision.py —— 合成人像逐帧送 MediaPipe 并核验融合报告
+    结果：passed=True　recordId=3
+    问答得分：45.0　视觉得分：65.0　综合分：49.0
+    人脸采集帧数：50
+    公式核验：45.0 × 0.8 + 65.0 × 0.2 = 49.0
+
+三、说明
+  本次记录中的测试输入均为新输入：一段新的岗位回答文本，以及一张合成面试人像
+  （虚构人物，见 data/测试数据/）。系统实际调用 DeepSeek 与 MediaPipe 完成处理，
+  未使用固定 JSON 或写死分数。原始接口返回见 evidence/关键接口返回.json。

@@ -82,3 +82,4 @@ smartspeech_optimized/runtime/ffmpeg/
 # 教学材料生成与调试的暂存目录（日志、数据库备份、生成产物）；仅保留生成脚本
 _build/*
 !_build/gen_group11.py
+!_build/gen_delivery_xlsx.py

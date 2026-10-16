@@ -1,0 +1,630 @@
+{
+  "版本": "v1.1.0",
+  "源码版本": "30d718a",
+  "记录时间": "2026-10-15",
+  "说明": "以下为现场验收冒烟测试的关键接口原始返回，对应 evidence/构建或自动化测试记录.txt",
+  "1_登录预约查询越权_smoke_test": {
+    "baseUrl": "http://127.0.0.1:8088/api",
+    "executedAt": "2026-10-15T21:25:47.188284",
+    "results": [
+      {
+        "name": "未登录访问记录",
+        "method": "GET",
+        "path": "/records",
+        "http": 401,
+        "expectedCode": 401,
+        "actualCode": 401,
+        "passed": true,
+        "response": {
+          "code": 401,
+          "message": "未登录或Token已过期",
+          "data": null
+        }
+      },
+      {
+        "name": "登录 test01",
+        "method": "POST",
+        "path": "/users/login",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": {
+            "userId": 2,
+            "username": "test01",
+            "roles": [
+              "candidate"
+            ]
+          }
+        }
+      },
+      {
+        "name": "登录 admin",
+        "method": "POST",
+        "path": "/users/login",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": {
+            "userId": 1,
+            "username": "admin",
+            "roles": [
+              "admin"
+            ]
+          }
+        }
+      },
+      {
+        "name": "登录 host01",
+        "method": "POST",
+        "path": "/users/login",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": {
+            "userId": 3,
+            "username": "host01",
+            "roles": [
+              "interviewer"
+            ]
+          }
+        }
+      },
+      {
+        "name": "空密码参数校验",
+        "method": "POST",
+        "path": "/users/login",
+        "http": 200,
+        "expectedCode": 400,
+        "actualCode": 400,
+        "passed": true,
+        "response": {
+          "code": 400,
+          "message": "密码不能为空",
+          "data": null
+        }
+      },
+      {
+        "name": "读取真实场景",
+        "method": "GET",
+        "path": "/scenarios",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": [
+            {
+              "id": 1,
+              "name": "Java后端工程师",
+              "description": "考察Java基础、Spring框架、数据库等",
+              "techField": "后端",
+              "difficulty": 2,
+              "coverImage": null,
+              "questionCount": 30,
+              "sortOrder": 0,
+              "status": 1,
+              "createdAt": "2026-10-15T21:25:04.814093",
+              "updatedAt": "2026-10-15T21:25:04.814093"
+            },
+            {
+              "id": 2,
+              "name": "前端工程师",
+              "description": "考察HTML/CSS、JavaScript、Vue/React等",
+              "techField": "前端",
+              "difficulty": 2,
+              "coverImage": null,
+              "questionCount": 5,
+              "sortOrder": 0,
+              "status": 1,
+              "createdAt": "2026-10-15T21:25:04.814093",
+              "updatedAt": "2026-10-15T21:25:04.814093"
+            },
+            {
+              "id": 3,
+              "name": "测试工程师",
+              "description": "考察测试理论、自动化测试、性能测试等",
+              "techField": "测试",
+              "difficulty": 1,
+              "coverImage": null,
+              "questionCount": 5,
+              "sortOrder": 0,
+              "status": 1,
+              "createdAt": "2026-10-15T21:25:04.814093",
+              "updatedAt": "2026-10-15T21:25:04.814093"
+            },
+            {
+              "id": 4,
+              "name": "产品经理",
+              "description": "考察需求分析、产品规划、指标设计和项目推进能力",
+              "techField": "产品",
+              "difficulty": 2,
+              "coverImage": null,
+              "questionCount": 5,
+              "sortOrder": 0,
+              "status": 1,
+              "createdAt": "2026-10-15T21:25:04.814093",
+              "updatedAt": "2026-10-15T21:25:04.814093"
+            }
+          ]
+        }
+      },
+      {
+        "name": "候选人预约落库",
+        "method": "POST",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": {
+            "id": 1,
+            "userId": 2,
+            "scenarioId": 1,
+            "paperId": null,
+            "interviewerId": null,
+            "roomCode": "room-d1a85b67",
+            "status": "pending",
+            "score": null,
+            "duration": null,
+            "answerData": null,
+            "aiFeedback": null,
+            "reportJson": null,
+            "scheduledAt": "2026-11-05T22:42:46",
+            "plannedEndAt": "2026-11-05T23:12:46",
+            "reminderSent": 0,
+            "questionIndex": 0,
+            "metadataJson": "{\"type\":\"llm\",\"source\":\"acceptance\"}",
+            "aiSessionId": null,
+            "currentPhase": null,
+            "submitId": null,
+            "startedAt": null,
+            "completedAt": null,
+            "createdAt": null,
+            "updatedAt": null,
+            "username": null,
+            "nickname": null
+          }
+        }
+      },
+      {
+        "name": "刷新及换角色查询 test01",
+        "method": "GET",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": [
+            {
+              "id": 1,
+              "userId": 2,
+              "scenarioId": 1,
+              "paperId": null,
+              "interviewerId": null,
+              "roomCode": "room-d1a85b67",
+              "status": "pending",
+              "score": null,
+              "duration": null,
+              "answerData": null,
+              "aiFeedback": null,
+              "reportJson": null,
+              "scheduledAt": "2026-11-05T22:42:46",
+              "plannedEndAt": "2026-11-05T23:12:46",
+              "reminderSent": 0,
+              "questionIndex": 0,
+              "metadataJson": "{\"type\":\"llm\",\"source\":\"acceptance\"}",
+              "aiSessionId": null,
+              "currentPhase": "ASKING",
+              "submitId": null,
+              "startedAt": null,
+              "completedAt": null,
+              "createdAt": "2026-10-15T21:25:46.685964",
+              "updatedAt": "2026-10-15T21:25:46.685964",
+              "username": null,
+              "nickname": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "刷新及换角色查询 admin",
+        "method": "GET",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": [
+            {
+              "id": 1,
+              "userId": 2,
+              "scenarioId": 1,
+              "paperId": null,
+              "interviewerId": null,
+              "roomCode": "room-d1a85b67",
+              "status": "pending",
+              "score": null,
+              "duration": null,
+              "answerData": null,
+              "aiFeedback": null,
+              "reportJson": null,
+              "scheduledAt": "2026-11-05T22:42:46",
+              "plannedEndAt": "2026-11-05T23:12:46",
+              "reminderSent": 0,
+              "questionIndex": 0,
+              "metadataJson": "{\"type\":\"llm\",\"source\":\"acceptance\"}",
+              "aiSessionId": null,
+              "currentPhase": "ASKING",
+              "submitId": null,
+              "startedAt": null,
+              "completedAt": null,
+              "createdAt": "2026-10-15T21:25:46.685964",
+              "updatedAt": "2026-10-15T21:25:46.685964",
+              "username": "test01",
+              "nickname": "测试用户1"
+            }
+          ]
+        }
+      },
+      {
+        "name": "刷新及换角色查询 host01",
+        "method": "GET",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": [
+            {
+              "id": 1,
+              "userId": 2,
+              "scenarioId": 1,
+              "paperId": null,
+              "interviewerId": null,
+              "roomCode": "room-d1a85b67",
+              "status": "pending",
+              "score": null,
+              "duration": null,
+              "answerData": null,
+              "aiFeedback": null,
+              "reportJson": null,
+              "scheduledAt": "2026-11-05T22:42:46",
+              "plannedEndAt": "2026-11-05T23:12:46",
+              "reminderSent": 0,
+              "questionIndex": 0,
+              "metadataJson": "{\"type\":\"llm\",\"source\":\"acceptance\"}",
+              "aiSessionId": null,
+              "currentPhase": "ASKING",
+              "submitId": null,
+              "startedAt": null,
+              "completedAt": null,
+              "createdAt": "2026-10-15T21:25:46.685964",
+              "updatedAt": "2026-10-15T21:25:46.685964",
+              "username": "test01",
+              "nickname": "测试用户1"
+            }
+          ]
+        }
+      },
+      {
+        "name": "重复时间预约冲突",
+        "method": "POST",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 400,
+        "actualCode": 400,
+        "passed": true,
+        "response": {
+          "code": 400,
+          "message": "预约时间冲突",
+          "data": null
+        }
+      },
+      {
+        "name": "不存在场景",
+        "method": "POST",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 400,
+        "actualCode": 400,
+        "passed": true,
+        "response": {
+          "code": 400,
+          "message": "面试场景不存在",
+          "data": null
+        }
+      },
+      {
+        "name": "管理员不能冒充候选人预约",
+        "method": "POST",
+        "path": "/interview-sessions",
+        "http": 200,
+        "expectedCode": 403,
+        "actualCode": 403,
+        "passed": true,
+        "response": {
+          "code": 403,
+          "message": "不具备相应的权限",
+          "data": null
+        }
+      },
+      {
+        "name": "注册第二位模拟候选人",
+        "method": "POST",
+        "path": "/users/register",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": {
+            "id": 4,
+            "username": "qadaeecbfaad",
+            "email": "qadaeecbfaad@example.com",
+            "phone": null,
+            "nickname": null,
+            "avatar": null,
+            "status": 1,
+            "createdAt": null,
+            "roles": null
+          }
+        }
+      },
+      {
+        "name": "他人记录详情权限",
+        "method": "GET",
+        "path": "/interview-sessions/1",
+        "http": 200,
+        "expectedCode": 403,
+        "actualCode": 403,
+        "passed": true,
+        "response": {
+          "code": 403,
+          "message": "无权限",
+          "data": null
+        }
+      },
+      {
+        "name": "他人状态快照权限",
+        "method": "GET",
+        "path": "/interview-sessions/1/state",
+        "http": 200,
+        "expectedCode": 403,
+        "actualCode": 403,
+        "passed": true,
+        "response": {
+          "code": 403,
+          "message": "无权限",
+          "data": null
+        }
+      },
+      {
+        "name": "取消预约",
+        "method": "POST",
+        "path": "/interview-sessions/1/cancel",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": null
+        }
+      },
+      {
+        "name": "已取消记录不能启动",
+        "method": "POST",
+        "path": "/interview-sessions/1/start",
+        "http": 200,
+        "expectedCode": 400,
+        "actualCode": 400,
+        "passed": true,
+        "response": {
+          "code": 400,
+          "message": "非法的状态转换: cancelled -> ongoing",
+          "data": null
+        }
+      },
+      {
+        "name": "退出 test01",
+        "method": "POST",
+        "path": "/users/logout",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": null
+        }
+      },
+      {
+        "name": "退出 admin",
+        "method": "POST",
+        "path": "/users/logout",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": null
+        }
+      },
+      {
+        "name": "退出 host01",
+        "method": "POST",
+        "path": "/users/logout",
+        "http": 200,
+        "expectedCode": 200,
+        "actualCode": 200,
+        "passed": true,
+        "response": {
+          "code": 200,
+          "message": "success",
+          "data": null
+        }
+      },
+      {
+        "name": "退出后令牌失效",
+        "method": "GET",
+        "path": "/records",
+        "http": 401,
+        "expectedCode": 401,
+        "actualCode": 401,
+        "passed": true,
+        "response": {
+          "code": 401,
+          "message": "未登录或Token已过期",
+          "data": null
+        }
+      }
+    ]
+  },
+  "2_大模型出题与问答评分_smoke_ai": {
+    "passed": true,
+    "recordId": 2,
+    "question": "你好，很高兴开始今天的面试。请从简历中挑一段你最想深入聊的项目经历，介绍一下你的具体职责、采用的技术方案，以及最终取得的可量化结果。",
+    "questionScore": 45.0,
+    "finalScore": null,
+    "steps": [
+      {
+        "method": "POST",
+        "path": "/users/login",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "method": "GET",
+        "path": "/scenarios",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "method": "POST",
+        "path": "/interview-sessions",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "method": "GET",
+        "path": "/interview-sessions/2/conversation",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "method": "POST",
+        "path": "/interview-sessions/2/conversation",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "method": "POST",
+        "path": "/interview-sessions/2/complete",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "method": "GET",
+        "path": "/records/my",
+        "httpStatus": 200,
+        "code": 200,
+        "message": "success"
+      },
+      {
+        "check": "追溯报告",
+        "passed": true,
+        "recordId": 2,
+        "textStatus": "已评估",
+        "visionStatus": "未评估"
+      }
+    ]
+  },
+  "3_视觉分析与融合报告_smoke_vision": {
+    "passed": true,
+    "recordId": 3,
+    "textScore": 45.0,
+    "visionScore": 65.0,
+    "finalScore": 49.0,
+    "faceFrames": 50,
+    "steps": [
+      {
+        "path": "/users/login",
+        "httpStatus": 200,
+        "code": 200
+      },
+      {
+        "path": "/scenarios",
+        "httpStatus": 200,
+        "code": 200
+      },
+      {
+        "path": "/interview-sessions",
+        "httpStatus": 200,
+        "code": 200
+      },
+      {
+        "path": "/interview-sessions/3/conversation",
+        "httpStatus": 200,
+        "code": 200
+      },
+      {
+        "check": "fresh-synthetic-frame",
+        "processedFrames": 50,
+        "faceDetected": true
+      },
+      {
+        "path": "/interview-sessions/3/conversation",
+        "httpStatus": 200,
+        "code": 200
+      },
+      {
+        "path": "/interview-sessions/3/complete",
+        "httpStatus": 200,
+        "code": 200
+      },
+      {
+        "path": "/records/my",
+        "httpStatus": 200,
+        "code": 200
+      }
+    ]
+  }
+}
